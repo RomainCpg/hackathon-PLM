@@ -75,12 +75,96 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 8px;
+    width: 100%;
 }
 
 .project-info h3 {
     margin: 0;
     font-size: 16px;
     font-weight: 600;
+    flex: 1;
+}
+
+.project-actions {
+    display: flex;
+    gap: 5px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.project-item:hover .project-actions {
+    opacity: 1;
+}
+
+.edit-btn,
+.delete-btn,
+.save-btn,
+.cancel-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.edit-btn:hover {
+    background: rgba(52, 152, 219, 0.3);
+    transform: scale(1.1);
+}
+
+.delete-btn:hover {
+    background: rgba(231, 76, 60, 0.3);
+    transform: scale(1.1);
+}
+
+.save-btn {
+    color: #2ecc71;
+    font-weight: bold;
+}
+
+.save-btn:hover {
+    background: rgba(46, 204, 113, 0.2);
+}
+
+.cancel-btn {
+    color: #e74c3c;
+    font-weight: bold;
+}
+
+.cancel-btn:hover {
+    background: rgba(231, 76, 60, 0.2);
+}
+
+.project-name-edit {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    width: 100%;
+}
+
+.project-name-input {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.9);
+    color: #2c3e50;
+    border: 2px solid rgba(52, 152, 219, 0.5);
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.project-name-input:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+.project-info-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
 }
 
 .status-badge {

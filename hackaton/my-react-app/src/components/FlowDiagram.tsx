@@ -13,17 +13,38 @@ import type { Node, Edge, Connection } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import type { Task } from '../types';
 import TaskNode from './TaskNode';
+import { useAIOptimization } from '../hooks/useAIOptimization';
 import '../styles/FlowDiagram.css';
 
 interface FlowDiagramProps {
     tasks: Task[];
+    projectId: string;
+    onTasksOptimized?: (tasks: Task[]) => void;
 }
 
 type LayoutMode = 'sequential' | 'departmental' | 'status';
 
-const FlowDiagram: React.FC<FlowDiagramProps> = ({ tasks }) => {
+const FlowDiagram: React.FC<FlowDiagramProps> = ({ tasks, projectId, onTasksOptimized }) => {
     const [layoutMode, setLayoutMode] = React.useState<LayoutMode>('sequential');
+    const [showOptimizationPanel, setShowOptimizationPanel] = React.useState(false);
     const nodeTypes = useMemo(() => ({ taskNode: TaskNode }), []);
+
+    const { optimizeProject, isOptimizing, error, lastOptimization, resetOptimization } = useAIOptimization();
+
+    const handleOptimize = async () => {
+        if (tasks.length === 0) {
+            console.warn('⚠️ Aucune tâche à optimiser');
+            return;
+        }
+
+        const result = await optimizeProject(projectId, tasks);
+        if (result && result.success) {
+            setShowOptimizationPanel(true);
+            if (onTasksOptimized) {
+                onTasksOptimized(result.project.tasks);
+            }
+        }
+    };
 
     // Créer les nœuds à partir des tâches avec différents layouts
     const initialNodes: Node[] = useMemo(() => {
@@ -161,29 +182,127 @@ const FlowDiagram: React.FC<FlowDiagramProps> = ({ tasks }) => {
     return (
         <div className="flow-diagram-container">
             <div className="flow-controls">
-                <span className="flow-label">Layout :</span>
+                <div className="flow-controls-group">
+                    <span className="flow-label">Layout :</span>
+                    <button
+                        className={`layout-btn ${layoutMode === 'sequential' ? 'active' : ''}`}
+                        onClick={() => setLayoutMode('sequential')}
+                        title="Vue séquentielle - toutes les tâches reliées dans l'ordre"
+                    >
+                        ➡️ Séquentiel
+                    </button>
+                    <button
+                        className={`layout-btn ${layoutMode === 'departmental' ? 'active' : ''}`}
+                        onClick={() => setLayoutMode('departmental')}
+                        title="Vue par département - organisé par swimlanes"
+                    >
+                        🏢 Par Département
+                    </button>
+                    <button
+                        className={`layout-btn ${layoutMode === 'status' ? 'active' : ''}`}
+                        onClick={() => setLayoutMode('status')}
+                        title="Vue par statut - colonnes de progression"
+                    >
+                        📊 Par Statut
+                    </button>
+                </div>
+
                 <button
-                    className={`layout-btn ${layoutMode === 'sequential' ? 'active' : ''}`}
-                    onClick={() => setLayoutMode('sequential')}
-                    title="Vue séquentielle - toutes les tâches reliées dans l'ordre"
+                    className={`optimize-btn ${isOptimizing ? 'optimizing' : ''}`}
+                    onClick={handleOptimize}
+                    disabled={isOptimizing || tasks.length === 0}
+                    title="Optimiser l'ordre des tâches avec l'IA"
                 >
-                    ➡️ Séquentiel
-                </button>
-                <button
-                    className={`layout-btn ${layoutMode === 'departmental' ? 'active' : ''}`}
-                    onClick={() => setLayoutMode('departmental')}
-                    title="Vue par département - organisé par swimlanes"
-                >
-                    🏢 Par Département
-                </button>
-                <button
-                    className={`layout-btn ${layoutMode === 'status' ? 'active' : ''}`}
-                    onClick={() => setLayoutMode('status')}
-                    title="Vue par statut - colonnes de progression"
-                >
-                    📊 Par Statut
+                    {isOptimizing ? (
+                        <>
+                            <span className="spinner">⚙️</span> Optimisation...
+                        </>
+                    ) : (
+                        <>
+                            🤖 Optimiser avec l'IA
+                        </>
+                    )}
                 </button>
             </div>
+
+            {error && (
+                <div className="optimization-error">
+                    ⚠️ Erreur: {error}
+                    <button onClick={resetOptimization} className="close-btn">✕</button>
+                </div>
+            )}
+
+            {showOptimizationPanel && lastOptimization && (
+                <div className="optimization-panel">
+                    <div className="optimization-header">
+                        <h3>🤖 Résultat de l'optimisation IA</h3>
+                        <button
+                            onClick={() => setShowOptimizationPanel(false)}
+                            className="close-btn"
+                        >
+                            ✕
+                        </button>
+                    </div>
+
+                    <div className="optimization-content">
+                        <div className="optimization-section">
+                            <h4>📊 Métadonnées</h4>
+                            <p><strong>Modèle:</strong> {lastOptimization.metadata.model}</p>
+                            <p><strong>Tâches optimisées:</strong> {lastOptimization.metadata.tasksCount}</p>
+                            <p><strong>Date:</strong> {new Date(lastOptimization.metadata.optimizedAt).toLocaleString('fr-FR')}</p>
+                        </div>
+
+                        {lastOptimization.notes && (
+                            <div className="optimization-section">
+                                <h4>📝 Notes</h4>
+                                <p>{lastOptimization.notes}</p>
+                            </div>
+                        )}
+
+                        {lastOptimization.dependencies && lastOptimization.dependencies.length > 0 && (
+                            <div className="optimization-section">
+                                <h4>🔗 Dépendances identifiées ({lastOptimization.dependencies.length})</h4>
+                                <ul>
+                                    {lastOptimization.dependencies.slice(0, 5).map((dep, idx) => (
+                                        <li key={idx}>
+                                            <strong>{dep.type === 'required' ? '⚠️ Requis' : '💡 Recommandé'}:</strong> {dep.reason}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+
+                        {lastOptimization.parallelGroups && lastOptimization.parallelGroups.length > 0 && (
+                            <div className="optimization-section">
+                                <h4>⚡ Tâches parallélisables</h4>
+                                <p>{lastOptimization.parallelGroups.length} groupes de tâches peuvent être exécutées en parallèle</p>
+                            </div>
+                        )}
+
+                        {lastOptimization.bottlenecks && lastOptimization.bottlenecks.length > 0 && (
+                            <div className="optimization-section warning">
+                                <h4>⚠️ Goulots d'étranglement</h4>
+                                <ul>
+                                    {lastOptimization.bottlenecks.map((bottleneck, idx) => (
+                                        <li key={idx}>{bottleneck}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+
+                        {lastOptimization.improvements && lastOptimization.improvements.length > 0 && (
+                            <div className="optimization-section success">
+                                <h4>💡 Suggestions d'amélioration</h4>
+                                <ul>
+                                    {lastOptimization.improvements.map((improvement, idx) => (
+                                        <li key={idx}>{improvement}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
 
             <ReactFlow
                 nodes={nodes}

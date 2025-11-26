@@ -1,52 +1,39 @@
 import express from 'express';
 import cors from 'cors';
+import dotenv from 'dotenv';
+import { optimizeTasks } from './services/aiOptimization.js';
+import { loadManufacturingData, getManufacturingStats } from './services/dataTransformer.js';
+
+dotenv.config();
 
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 
-// Base de données en mémoire (à remplacer par une vraie DB plus tard)
-let projects = [
-    {
-        id: '1',
-        name: 'Projet Airplus',
-        description: 'Gestion des processus clients, logistique et services',
-        status: 'active',
-        createdAt: new Date().toISOString(),
-        tasks: [
-            {
-                id: '1',
-                title: 'Recevoir la commande',
-                description: 'Réception et validation de la commande client',
-                status: 'done',
-                department: 'clients',
-                createdAt: new Date().toISOString(),
-                order: 0
-            },
-            {
-                id: '2',
-                title: 'Classifier la pièce',
-                description: 'Classification et catégorisation de la pièce',
-                status: 'in-progress',
-                department: 'clients',
-                createdAt: new Date().toISOString(),
-                order: 1
-            },
-            {
-                id: '3',
-                title: 'Réviser la pièce',
-                description: 'Révision technique et validation des spécifications',
-                status: 'todo',
-                department: 'logistics',
-                createdAt: new Date().toISOString(),
-                order: 0
-            }
-        ]
-    }
-];
+// Charger les données depuis merged_json.json
+let projects = [];
+try {
+    const manufacturingProject = loadManufacturingData();
+    projects = [manufacturingProject];
+    console.log('✅ Données manufacturing chargées avec succès');
+    console.log(`📊 ${projects[0].tasks.length} postes de travail disponibles`);
+} catch (error) {
+    console.error('❌ Erreur lors du chargement des données manufacturing:', error);
+    // Fallback sur des données par défaut si le chargement échoue
+    projects = [
+        {
+            id: '1',
+            name: 'Projet Airplus',
+            description: 'Gestion des processus clients, logistique et services',
+            status: 'active',
+            createdAt: new Date().toISOString(),
+            tasks: []
+        }
+    ];
+}
 
 // Routes
 
@@ -165,6 +152,59 @@ app.delete('/api/projects/:projectId/tasks/:taskId', (req, res) => {
     res.status(204).send();
 });
 
+// POST - Optimiser les tâches d'un projet avec l'IA
+app.post('/api/projects/:id/optimize', async (req, res) => {
+    try {
+        const { tasks } = req.body;
+        const projectId = req.params.id;
+
+        console.log(`📊 Optimisation demandée pour le projet ${projectId}`);
+        console.log(`📋 Nombre de tâches: ${tasks?.length || 0}`);
+
+        if (!tasks || tasks.length === 0) {
+            return res.status(400).json({
+                success: false,
+                error: 'Aucune tâche à optimiser'
+            });
+        }
+
+        const result = await optimizeTasks(tasks);
+
+        console.log('✅ Optimisation réussie:', result.success ? 'Oui' : 'Non');
+
+        // Créer la réponse avec le format attendu par le frontend
+        const response = {
+            success: true,
+            project: {
+                id: projectId,
+                tasks: tasks // Pour l'instant on retourne les mêmes tâches
+            },
+            optimization: {
+                tasks: tasks,
+                dependencies: [],
+                parallelGroups: result.parallelGroups || [],
+                notes: result.suggestions?.join('\n') || 'Optimisation effectuée avec succès',
+                bottlenecks: [],
+                improvements: result.suggestions || [],
+                metadata: {
+                    optimizedAt: result.metadata?.timestamp || new Date().toISOString(),
+                    model: result.metadata?.model || 'unknown',
+                    tasksCount: tasks.length
+                }
+            }
+        };
+
+        res.json(response);
+    } catch (error) {
+        console.error('❌ Erreur lors de l\'optimisation:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message,
+            usedFallback: true
+        });
+    }
+});
+
 // GET - Statistiques globales
 app.get('/api/stats', (req, res) => {
     const stats = {
@@ -200,6 +240,23 @@ app.get('/api/stats', (req, res) => {
     });
 
     res.json(stats);
+});
+
+// GET - Statistiques manufacturing détaillées
+app.get('/api/manufacturing/stats', (req, res) => {
+    try {
+        if (projects.length === 0) {
+            return res.json({ error: 'Aucun projet disponible' });
+        }
+
+        const manufacturingProject = projects.find(p => p.id === 'airplus-manufacturing') || projects[0];
+        const stats = getManufacturingStats(manufacturingProject);
+
+        res.json(stats);
+    } catch (error) {
+        console.error('Erreur lors du calcul des stats:', error);
+        res.status(500).json({ error: error.message });
+    }
 });
 
 // Route de santé

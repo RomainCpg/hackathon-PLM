@@ -20,15 +20,15 @@ const ProjectBoard: React.FC<ProjectBoardProps> = ({
     const [newTask, setNewTask] = useState({
         title: '',
         description: '',
-        department: 'clients' as const,
+        department: 'assembly' as const,
         status: 'todo' as const,
         order: 0
     });
 
     const departments = [
-        { id: 'clients', name: 'Clients', color: '#E3F2FD', icon: '👥' },
-        { id: 'logistics', name: 'Logistics', color: '#FFF3E0', icon: '🚚' },
-        { id: 'services', name: 'Services', color: '#F1F8E9', icon: '🔧' }
+        { id: 'assembly', name: 'Assemblage', color: '#E3F2FD', icon: '�' },
+        { id: 'integration', name: 'Intégration', color: '#FFF3E0', icon: '�' },
+        { id: 'finishing', name: 'Finition', color: '#F1F8E9', icon: '✨' }
     ];
 
     const statuses = [
@@ -49,7 +49,7 @@ const ProjectBoard: React.FC<ProjectBoardProps> = ({
         setNewTask({
             title: '',
             description: '',
-            department: 'clients',
+            department: 'assembly',
             status: 'todo',
             order: 0
         });

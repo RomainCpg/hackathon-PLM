@@ -127,12 +127,32 @@ function App() {
     setSelectedProjectId(newProject.id);
   };
 
-  const handleTasksLoaded = (tasks: Task[]) => {
+  const handleRenameProject = (projectId: string, newName: string) => {
+    setProjects(prev => prev.map(project =>
+      project.id === projectId ? { ...project, name: newName } : project
+    ));
+  };
+
+  const handleDeleteProject = (projectId: string) => {
+    setProjects(prev => prev.filter(project => project.id !== projectId));
+    // Si le projet supprimé était sélectionné, sélectionner le premier projet disponible
+    if (selectedProjectId === projectId) {
+      const remainingProjects = projects.filter(p => p.id !== projectId);
+      setSelectedProjectId(remainingProjects.length > 0 ? remainingProjects[0].id : null);
+    }
+  };
+
+  const handleTasksLoaded = (tasks: Task[], fileName?: string) => {
     if (selectedProject) {
       setProjects(prev => prev.map(project => {
         if (project.id === selectedProjectId) {
+          // Si un nom de fichier est fourni et que le projet a un nom par défaut, utiliser le nom du fichier
+          const shouldRename = fileName &&
+            (project.name.startsWith('Nouveau Projet') || project.tasks.length === 0);
+
           return {
             ...project,
+            name: shouldRename ? fileName : project.name,
             tasks: [...project.tasks, ...tasks]
           };
         }
@@ -149,6 +169,8 @@ function App() {
         selectedProjectId={selectedProjectId}
         onSelectProject={setSelectedProjectId}
         onAddProject={handleAddProject}
+        onRenameProject={handleRenameProject}
+        onDeleteProject={handleDeleteProject}
       />
       <div className="main-content">
         {selectedProject ? (
@@ -186,7 +208,17 @@ function App() {
                 onAddTask={handleAddTask}
               />
             ) : (
-              <FlowDiagram tasks={selectedProject.tasks} />
+              <FlowDiagram
+                tasks={selectedProject.tasks}
+                projectId={selectedProject.id}
+                onTasksOptimized={(optimizedTasks) => {
+                  setProjects(prev => prev.map(project =>
+                    project.id === selectedProjectId
+                      ? { ...project, tasks: optimizedTasks }
+                      : project
+                  ));
+                }}
+              />
             )}
           </>
         ) : (

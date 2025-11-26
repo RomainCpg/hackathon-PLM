@@ -3,7 +3,7 @@ import type { Task } from '../types';
 import '../styles/FileUpload.css';
 
 interface FileUploadProps {
-    onTasksLoaded: (tasks: Task[]) => void;
+    onTasksLoaded: (tasks: Task[], fileName?: string) => void;
 }
 
 // Format attendu du JSON
@@ -43,6 +43,9 @@ const FileUpload: React.FC<FileUploadProps> = ({ onTasksLoaded }) => {
             return;
         }
 
+        // Extraire le nom du fichier sans l'extension
+        const fileNameWithoutExtension = file.name.replace(/\.json$/i, '');
+
         const reader = new FileReader();
 
         reader.onload = (e) => {
@@ -64,7 +67,8 @@ const FileUpload: React.FC<FileUploadProps> = ({ onTasksLoaded }) => {
                 }
 
                 const tasks = parseLogToTasks(logs);
-                onTasksLoaded(tasks);
+                // Passer le nom du fichier avec les tâches
+                onTasksLoaded(tasks, fileNameWithoutExtension);
                 setError(null);
 
                 // Reset input
