@@ -1,0 +1,73 @@
+.app-container {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.main-content {
+  flex: 1;
+  background: #f5f7fa;
+  overflow: auto;
+}
+
+.no-project {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  color: #999;
+}
+
+.no-project h2 {
+  margin-bottom: 10px;
+  font-size: 24px;
+}
+
+.no-project p {
+  font-size: 14px;
+}
+
+.view-controls {
+  display: flex;
+  gap: 10px;
+  padding: 20px;
+  background: white;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.view-btn,
+.upload-btn {
+  padding: 10px 20px;
+  border: 2px solid #e0e0e0;
+  background: white;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.view-btn:hover,
+.upload-btn:hover {
+  border-color: #667eea;
+  background: #f8f9ff;
+}
+
+.view-btn.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-color: #667eea;
+}
+
+.upload-btn {
+  margin-left: auto;
+  background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+  color: white;
+  border-color: #4caf50;
+}
+
+.upload-btn:hover {
+  background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
+  border-color: #45a049;
+}

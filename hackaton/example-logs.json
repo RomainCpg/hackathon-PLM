@@ -1,0 +1,110 @@
+[
+    {
+        "id": "task-1",
+        "title": "Recevoir la commande",
+        "description": "Réception et validation de la commande client - Point de départ du workflow",
+        "status": "done",
+        "department": "clients",
+        "assignedTo": "Jean Dupont",
+        "order": 0
+    },
+    {
+        "id": "task-2",
+        "title": "Analyser les besoins",
+        "description": "Analyse détaillée des besoins et spécifications client",
+        "status": "done",
+        "department": "clients",
+        "assignedTo": "Marie Martin",
+        "order": 1
+    },
+    {
+        "id": "task-3",
+        "title": "Classifier la pièce",
+        "description": "Classification et catégorisation selon les normes industrielles",
+        "status": "in-progress",
+        "department": "clients",
+        "assignedTo": "Marie Martin",
+        "order": 2
+    },
+    {
+        "id": "task-4",
+        "title": "Vérifier la disponibilité",
+        "description": "Vérification de la disponibilité des pièces en stock",
+        "status": "in-progress",
+        "department": "logistics",
+        "assignedTo": "Pierre Durand",
+        "order": 0
+    },
+    {
+        "id": "task-5",
+        "title": "Commander les matériaux",
+        "description": "Commande des matériaux manquants auprès des fournisseurs",
+        "status": "todo",
+        "department": "logistics",
+        "assignedTo": "Pierre Durand",
+        "order": 1
+    },
+    {
+        "id": "task-6",
+        "title": "Réviser la pièce",
+        "description": "Révision technique et validation des spécifications",
+        "status": "todo",
+        "department": "logistics",
+        "assignedTo": "Lucas Bernard",
+        "order": 2
+    },
+    {
+        "id": "task-7",
+        "title": "Valider les specs",
+        "description": "Validation finale des spécifications techniques par l'ingénieur",
+        "status": "todo",
+        "department": "logistics",
+        "assignedTo": "Lucas Bernard",
+        "order": 3
+    },
+    {
+        "id": "task-8",
+        "title": "Approuver la pièce",
+        "description": "Approbation finale avant production par le responsable qualité",
+        "status": "todo",
+        "department": "services",
+        "assignedTo": "Sophie Lefebvre",
+        "order": 0
+    },
+    {
+        "id": "task-9",
+        "title": "Programmer la production",
+        "description": "Planification de la production dans l'atelier avec calendrier",
+        "status": "todo",
+        "department": "services",
+        "assignedTo": "Thomas Petit",
+        "order": 1
+    },
+    {
+        "id": "task-10",
+        "title": "Fabriquer la pièce",
+        "description": "Fabrication de la pièce selon les spécifications validées",
+        "status": "todo",
+        "department": "services",
+        "assignedTo": "Thomas Petit",
+        "order": 2
+    },
+    {
+        "id": "task-11",
+        "title": "Contrôle qualité",
+        "description": "Inspection et contrôle qualité final de la pièce produite",
+        "status": "todo",
+        "department": "services",
+        "assignedTo": "Sophie Lefebvre",
+        "order": 3
+    },
+    {
+        "id": "task-12",
+        "title": "Livraison client",
+        "description": "Préparation et envoi de la commande au client - Fin du workflow",
+        "status": "todo",
+        "department": "services",
+        "assignedTo": "Pierre Durand",
+        "order": 4
+    }
+]
