@@ -63,27 +63,26 @@ const TaskNode = ({ data }: NodeProps) => {
                 style={{ background: '#555', width: 10, height: 10 }}
             />
 
-            <div
-                className="task-node-header"
-                style={{ borderBottomColor: getDepartmentColor(task.department) }}
-            >
-                <span className="task-node-status">{getStatusIcon(task.status)}</span>
-                <span className="task-node-department">{getDepartmentIcon(task.department)}</span>
-            </div>
             <div className="task-node-body">
-                <h4>{task.title}</h4>
-                {task.description && (
-                    <p className="task-node-description">{task.description}</p>
-                )}
-            </div>
-            <div className="task-node-footer">
-                <span className="task-node-dept-label">{task.department}</span>
-                <span className="task-node-status-label">
-                    {task.status === 'in-progress' ? 'En cours' :
-                        task.status === 'todo' ? 'À faire' :
-                            task.status === 'review' ? 'Révision' :
-                                task.status === 'done' ? 'Terminé' : task.status}
-                </span>
+                <div className="task-node-title">{task.title}</div>
+                <div className="task-node-info">
+                    <div className="task-node-row">
+                        <strong>Durée Prévue:</strong> {task['tempsPrévu'] || 'N/A'}
+                    </div>
+                    <div className="task-node-row">
+                        <strong>Temps réel:</strong> {task['tempsRéel'] || 'N/A'}
+                    </div>
+                    {task['aléasIndustriels'] && (
+                        <div className="task-node-row">
+                            <strong>Aléas:</strong> {task['aléasIndustriels']}
+                        </div>
+                    )}
+                    {task.causePotentielle && (
+                        <div className="task-node-row">
+                            <strong>Causes:</strong> {task.causePotentielle}
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Handle de sortie (droite) */}

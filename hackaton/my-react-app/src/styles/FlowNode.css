@@ -1,10 +1,11 @@
 .task-flow-node {
-    min-width: 250px;
-    border-radius: 12px;
+    min-width: 280px;
+    border-radius: 8px;
     border: 2px solid rgba(0, 0, 0, 0.1);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     transition: all 0.3s ease;
     overflow: hidden;
+    background: white;
 }
 
 .task-flow-node:hover {
@@ -12,63 +13,33 @@
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
 }
 
-.task-node-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 15px;
-    background: white;
-    border-bottom: 3px solid;
-}
-
-.task-node-status,
-.task-node-department {
-    font-size: 20px;
-}
-
 .task-node-body {
-    padding: 15px;
+    padding: 12px 15px;
 }
 
-.task-node-body h4 {
-    margin: 0 0 8px 0;
-    font-size: 15px;
+.task-node-title {
+    font-size: 14px;
     font-weight: 600;
     color: #333;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
 
-.task-node-description {
-    margin: 0;
-    font-size: 12px;
-    color: #666;
-    line-height: 1.4;
-    max-height: 60px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    line-clamp: 3;
-    -webkit-box-orient: vertical;
-}
-
-.task-node-footer {
+.task-node-info {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 15px;
-    background: rgba(255, 255, 255, 0.5);
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: uppercase;
+    flex-direction: column;
+    gap: 6px;
 }
 
-.task-node-dept-label {
-    color: #666;
+.task-node-row {
+    font-size: 12px;
+    color: #555;
+    line-height: 1.4;
 }
 
-.task-node-status-label {
+.task-node-row strong {
     color: #333;
-    background: rgba(0, 0, 0, 0.05);
-    padding: 2px 8px;
-    border-radius: 12px;
+    font-weight: 600;
+    margin-right: 4px;
 }

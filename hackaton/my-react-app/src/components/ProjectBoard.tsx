@@ -20,28 +20,69 @@ const ProjectBoard: React.FC<ProjectBoardProps> = ({
     const [newTask, setNewTask] = useState({
         title: '',
         description: '',
-        department: 'clients' as const,
+        department: 'logistics' as const,
         status: 'todo' as const,
         order: 0
     });
 
-    const departments = [
-        { id: 'clients', name: 'Clients', color: '#E3F2FD', icon: '👥' },
-        { id: 'logistics', name: 'Logistics', color: '#FFF3E0', icon: '🚚' },
-        { id: 'services', name: 'Services', color: '#F1F8E9', icon: '🔧' }
-    ];
+    // Extract unique task types from the tasks
+    const getTaskTypes = () => {
+        const types = new Set<string>();
+        project.tasks.forEach(task => {
+            // Extract task type from title (after "Poste X: ")
+            const match = task.title.match(/: (.+)$/);
+            if (match) {
+                const taskName = match[1];
+                // Group similar tasks
+                if (taskName.includes('Assemblage')) types.add('Assemblage');
+                else if (taskName.includes('Montage')) types.add('Montage');
+                else if (taskName.includes('Fixation')) types.add('Fixation');
+                else if (taskName.includes('Stickers')) types.add('Stickers');
+                else if (taskName.includes('Passage')) types.add('Passage');
+                else types.add('Autre');
+            }
+        });
+        return Array.from(types).sort();
+    };
 
-    const statuses = [
-        { id: 'todo', name: 'À faire' },
-        { id: 'in-progress', name: 'En cours' },
-        { id: 'review', name: 'Révision' },
-        { id: 'done', name: 'Terminé' }
-    ];
+    // Get unique people from all tasks
+    const getPeople = () => {
+        const peopleSet = new Set<string>();
+        project.tasks.forEach(task => {
+            if (task.personnes && Array.isArray(task.personnes)) {
+                task.personnes.forEach((person: any) => {
+                    if (person.Nom) peopleSet.add(person.Nom);
+                });
+            }
+        });
+        return Array.from(peopleSet).sort();
+    };
 
-    const getTasksByDepartmentAndStatus = (dept: string, status: string) => {
-        return project.tasks
-            .filter(task => task.department === dept && task.status === status)
-            .sort((a, b) => a.order - b.order);
+    const taskTypes = getTaskTypes();
+    const people = getPeople();
+
+    const getTaskType = (task: Task) => {
+        const match = task.title.match(/: (.+)$/);
+        if (match) {
+            const taskName = match[1];
+            if (taskName.includes('Assemblage')) return 'Assemblage';
+            if (taskName.includes('Montage')) return 'Montage';
+            if (taskName.includes('Fixation')) return 'Fixation';
+            if (taskName.includes('Stickers')) return 'Stickers';
+            if (taskName.includes('Passage')) return 'Passage';
+        }
+        return 'Autre';
+    };
+
+    const getTasksByType = (type: string) => {
+        return project.tasks.filter(task => getTaskType(task) === type).sort((a, b) => a.order - b.order);
+    };
+
+    const getTasksByPerson = (personName: string) => {
+        return project.tasks.filter(task => {
+            if (!task.personnes || !Array.isArray(task.personnes)) return false;
+            return task.personnes.some((person: any) => person.Nom === personName);
+        }).sort((a, b) => a.order - b.order);
     };
 
     const handleAddTask = () => {
@@ -49,7 +90,7 @@ const ProjectBoard: React.FC<ProjectBoardProps> = ({
         setNewTask({
             title: '',
             description: '',
-            department: 'clients',
+            department: 'logistics' as const,
             status: 'todo',
             order: 0
         });
@@ -66,39 +107,57 @@ const ProjectBoard: React.FC<ProjectBoardProps> = ({
             </div>
 
             <div className="board-grid">
-                <div className="status-headers">
-                    <div className="empty-cell"></div>
-                    {statuses.map(status => (
-                        <div key={status.id} className="status-header">
-                            {status.name}
-                        </div>
-                    ))}
-                </div>
-
-                {departments.map(dept => (
-                    <div key={dept.id} className="department-row">
-                        <div
-                            className="department-header"
-                            style={{ backgroundColor: dept.color }}
-                        >
-                            <span className="dept-icon">{dept.icon}</span>
-                            <span>{dept.name}</span>
-                        </div>
-
-                        {statuses.map(status => (
-                            <div key={`${dept.id}-${status.id}`} className="task-column">
-                                {getTasksByDepartmentAndStatus(dept.id, status.id).map(task => (
-                                    <TaskCard
-                                        key={task.id}
-                                        task={task}
-                                        onUpdate={onUpdateTask}
-                                        onDelete={onDeleteTask}
-                                    />
-                                ))}
+                <div className="grid-section">
+                    <h3 className="section-title">📋 Type de tâche</h3>
+                    <div className="grid-columns">
+                        {taskTypes.map(type => (
+                            <div key={type} className="task-type-column">
+                                <div className="column-header">
+                                    <span>{type}</span>
+                                    <span className="task-count">{getTasksByType(type).length}</span>
+                                </div>
+                                <div className="task-list">
+                                    {getTasksByType(type).map(task => (
+                                        <TaskCard
+                                            key={task.id}
+                                            task={task}
+                                            onUpdate={onUpdateTask}
+                                            onDelete={onDeleteTask}
+                                        />
+                                    ))}
+                                </div>
                             </div>
                         ))}
                     </div>
-                ))}
+                </div>
+
+                <div className="grid-section">
+                    <h3 className="section-title">👥 Personnes impliquées</h3>
+                    <div className="grid-columns">
+                        {people.length > 0 ? (
+                            people.slice(0, 6).map(person => (
+                                <div key={person} className="person-column">
+                                    <div className="column-header">
+                                        <span className="person-name">{person}</span>
+                                        <span className="task-count">{getTasksByPerson(person).length}</span>
+                                    </div>
+                                    <div className="task-list">
+                                        {getTasksByPerson(person).map(task => (
+                                            <TaskCard
+                                                key={task.id}
+                                                task={task}
+                                                onUpdate={onUpdateTask}
+                                                onDelete={onDeleteTask}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="no-data">Aucune personne assignée</div>
+                        )}
+                    </div>
+                </div>
             </div>
 
             {showAddModal && (
@@ -117,20 +176,13 @@ const ProjectBoard: React.FC<ProjectBoardProps> = ({
                             onChange={e => setNewTask({ ...newTask, description: e.target.value })}
                         />
                         <select
-                            value={newTask.department}
-                            onChange={e => setNewTask({ ...newTask, department: e.target.value as any })}
-                        >
-                            {departments.map(d => (
-                                <option key={d.id} value={d.id}>{d.name}</option>
-                            ))}
-                        </select>
-                        <select
                             value={newTask.status}
                             onChange={e => setNewTask({ ...newTask, status: e.target.value as any })}
                         >
-                            {statuses.map(s => (
-                                <option key={s.id} value={s.id}>{s.name}</option>
-                            ))}
+                            <option value="todo">À faire</option>
+                            <option value="in-progress">En cours</option>
+                            <option value="review">Révision</option>
+                            <option value="done">Terminé</option>
                         </select>
                         <div className="modal-actions">
                             <button onClick={() => setShowAddModal(false)}>Annuler</button>

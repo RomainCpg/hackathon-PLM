@@ -3,6 +3,7 @@ import type { Project, Task } from './types'
 import Sidebar from './components/Sidebar'
 import ProjectBoard from './components/ProjectBoard'
 import FlowDiagram from './components/FlowDiagram'
+import GanttChart from './components/GanttChart'
 import FileUpload from './components/FileUpload'
 import './App.css'
 
@@ -65,10 +66,22 @@ function App() {
   ]);
 
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(projects[0]?.id || null);
-  const [viewMode, setViewMode] = useState<'grid' | 'flow'>('grid');
+  const [viewMode, setViewMode] = useState<'gantt' | 'grid' | 'flow'>('gantt');
   const [showUpload, setShowUpload] = useState(false);
 
   const selectedProject = projects.find(p => p.id === selectedProjectId);
+
+  const handleUpdateTasks = (updatedTasks: Task[]) => {
+    setProjects(prev => prev.map(project => {
+      if (project.id === selectedProjectId) {
+        return {
+          ...project,
+          tasks: updatedTasks
+        };
+      }
+      return project;
+    }));
+  };
 
   const handleUpdateTask = (taskId: string, updates: Partial<Task>) => {
     setProjects(prev => prev.map(project => {
@@ -155,10 +168,16 @@ function App() {
           <>
             <div className="view-controls">
               <button
+                className={`view-btn ${viewMode === 'gantt' ? 'active' : ''}`}
+                onClick={() => setViewMode('gantt')}
+              >
+                📊 Gantt
+              </button>
+              <button
                 className={`view-btn ${viewMode === 'grid' ? 'active' : ''}`}
                 onClick={() => setViewMode('grid')}
               >
-                📊 Grille
+                📋 Grille
               </button>
               <button
                 className={`view-btn ${viewMode === 'flow' ? 'active' : ''}`}
@@ -178,7 +197,9 @@ function App() {
               <FileUpload onTasksLoaded={handleTasksLoaded} />
             )}
 
-            {viewMode === 'grid' ? (
+            {viewMode === 'gantt' ? (
+              <GanttChart tasks={selectedProject.tasks} />
+            ) : viewMode === 'grid' ? (
               <ProjectBoard
                 project={selectedProject}
                 onUpdateTask={handleUpdateTask}
@@ -186,7 +207,10 @@ function App() {
                 onAddTask={handleAddTask}
               />
             ) : (
-              <FlowDiagram tasks={selectedProject.tasks} />
+              <FlowDiagram 
+                tasks={selectedProject.tasks} 
+                onTasksUpdate={handleUpdateTasks}
+              />
             )}
           </>
         ) : (

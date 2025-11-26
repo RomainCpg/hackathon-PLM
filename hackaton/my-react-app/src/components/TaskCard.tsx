@@ -49,14 +49,14 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onUpdate, onDelete }) => {
                 </div>
             </div>
             <p className="task-description">{task.description}</p>
-            {task.assignedTo && (
-                <div className="task-assigned">
-                    <span>👤 {task.assignedTo}</span>
+            {task.poste && (
+                <div className="task-meta">
+                    <span className="poste-badge">Poste {task.poste}</span>
                 </div>
             )}
-            {task.dueDate && (
-                <div className="task-date">
-                    <span>📅 {new Date(task.dueDate).toLocaleDateString('fr-FR')}</span>
+            {task.personnes && task.personnes.length > 0 && (
+                <div className="task-people">
+                    <span>👥 {task.personnes.length} personne(s)</span>
                 </div>
             )}
         </div>

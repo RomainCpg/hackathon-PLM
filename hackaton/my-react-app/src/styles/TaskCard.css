@@ -62,8 +62,22 @@
     line-height: 1.4;
 }
 
-.task-assigned,
-.task-date {
+.task-meta {
+    margin-top: 8px;
+}
+
+.poste-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.task-people {
     font-size: 11px;
     color: #888;
     margin-top: 8px;

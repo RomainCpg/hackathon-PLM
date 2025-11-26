@@ -39,64 +39,77 @@
 .board-grid {
     display: flex;
     flex-direction: column;
-    gap: 0;
+    gap: 40px;
 }
 
-.status-headers {
-    display: grid;
-    grid-template-columns: 200px repeat(4, 1fr);
-    gap: 15px;
-    margin-bottom: 10px;
-}
-
-.empty-cell {
-    grid-column: 1;
-}
-
-.status-header {
-    font-weight: 600;
-    font-size: 14px;
-    color: #555;
-    text-align: center;
-    padding: 10px;
+.grid-section {
     background: #f8f9fa;
-    border-radius: 8px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    border-radius: 12px;
+    padding: 20px;
 }
 
-.department-row {
-    display: grid;
-    grid-template-columns: 200px repeat(4, 1fr);
-    gap: 15px;
-    margin-bottom: 20px;
-}
-
-.department-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 15px;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 16px;
+.section-title {
+    font-size: 20px;
+    font-weight: 700;
     color: #333;
-    border: 2px solid rgba(0, 0, 0, 0.1);
+    margin: 0 0 20px 0;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e0e0e0;
 }
 
-.dept-icon {
-    font-size: 24px;
+.grid-columns {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 15px;
 }
 
-.task-column {
-    background: #f8f9fa;
+.task-type-column,
+.person-column {
+    background: white;
     border-radius: 8px;
+    border: 2px solid #e0e0e0;
+    overflow: hidden;
+}
+
+.column-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: 600;
+}
+
+.person-name {
+    font-size: 14px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.task-count {
+    background: rgba(255, 255, 255, 0.3);
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.task-list {
     padding: 10px;
-    min-height: 100px;
     display: flex;
     flex-direction: column;
     gap: 10px;
-    border: 2px dashed #e0e0e0;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.no-data {
+    text-align: center;
+    padding: 40px;
+    color: #999;
+    font-style: italic;
 }
 
 /* Modal */

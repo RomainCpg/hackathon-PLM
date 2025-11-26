@@ -4,10 +4,22 @@ export interface Task {
     description: string;
     status: 'todo' | 'in-progress' | 'review' | 'done';
     department: 'clients' | 'logistics' | 'services';
-    assignedTo?: string;
-    dueDate?: string;
     createdAt: string;
     order: number;
+    // Manufacturing fields from merged_json
+    poste?: number;
+    nombrePieces?: number;
+    'tempsPrévu'?: string;
+    'tempsRéel'?: string;
+    'aléasIndustriels'?: string;
+    causePotentielle?: string;
+    heureDebut?: string;
+    heureFin?: string;
+    personnes?: any[];
+    'pièces'?: any[];
+    // Flow diagram fields
+    dependencies?: string[]; // IDs of tasks that must complete before this one
+    position?: { x: number; y: number }; // Position in flow diagram
 }
 
 export interface Project {

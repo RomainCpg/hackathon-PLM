@@ -18,6 +18,22 @@ interface LogEntry {
     order?: number;
 }
 
+// Format merged_json.json (manufacturing data)
+interface MergedJsonEntry {
+    Poste: number;
+    Nom: string;
+    'Nombre pièces': number;
+    'Temps Prévu': string;
+    Date: number;
+    'Heure Début': string;
+    'Heure Fin': string;
+    'Temps Réel': string;
+    'Aléas Industriels': string;
+    'Cause Potentielle': string;
+    Personnes: any[];
+    Pièces: any[];
+}
+
 const FileUpload: React.FC<FileUploadProps> = ({ onTasksLoaded }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [error, setError] = useState<string | null>(null);
@@ -37,6 +53,140 @@ const FileUpload: React.FC<FileUploadProps> = ({ onTasksLoaded }) => {
         }));
     };
 
+    const parseMergedJsonToTasks = (entries: MergedJsonEntry[]): Task[] => {
+        // First pass: create all tasks
+        const tasks = entries.map((entry) => {
+            // Determine status: 'review' if issues, otherwise 'done'
+            let status: 'todo' | 'in-progress' | 'review' | 'done' = 'done';
+            if (entry['Aléas Industriels']) {
+                status = 'review';
+            }
+
+            // Determine department based on task name
+            let department: 'clients' | 'logistics' | 'services' = 'logistics';
+            const taskName = entry.Nom.toLowerCase();
+            if (taskName.includes('assemblage') || taskName.includes('montage')) {
+                department = 'logistics';
+            } else if (taskName.includes('fixation') || taskName.includes('sticker')) {
+                department = 'services';
+            }
+
+            // Build rich description
+            const descParts = [];
+            if (entry['Aléas Industriels']) {
+                descParts.push(`⚠️ Aléa: ${entry['Aléas Industriels']}`);
+            }
+            if (entry['Cause Potentielle']) {
+                descParts.push(`Cause: ${entry['Cause Potentielle']}`);
+            }
+            descParts.push(`Pièces: ${entry['Nombre pièces']}`);
+            descParts.push(`⏱️ Prévu: ${entry['Temps Prévu']} | Réel: ${entry['Temps Réel']}`);
+            descParts.push(`🕐 ${entry['Heure Début']} → ${entry['Heure Fin']}`);
+            
+            const description = descParts.join(' • ');
+
+            return {
+                id: `poste-${entry.Poste}`,
+                title: `Poste ${entry.Poste}: ${entry.Nom}`,
+                description,
+                status,
+                department,
+                createdAt: new Date(entry.Date).toISOString(),
+                order: entry.Poste - 1,
+                // Store original manufacturing data
+                poste: entry.Poste,
+                nombrePieces: entry['Nombre pièces'],
+                'tempsPrévu': entry['Temps Prévu'],
+                'tempsRéel': entry['Temps Réel'],
+                'aléasIndustriels': entry['Aléas Industriels'],
+                causePotentielle: entry['Cause Potentielle'],
+                heureDebut: entry['Heure Début'],
+                heureFin: entry['Heure Fin'],
+                personnes: entry.Personnes,
+                'pièces': entry.Pièces,
+                // Initialize dependencies and position
+                dependencies: [] as string[],
+                position: undefined,
+            };
+        });
+
+        // Second pass: build dependencies based on Semaine field
+        // Group tasks by week number from Personnes
+        const tasksByWeek = new Map<number, Task[]>();
+        
+        tasks.forEach(task => {
+            if (task.personnes && task.personnes.length > 0) {
+                // Get week number from first person's Semaine field
+                const semaine = task.personnes[0].Semaine;
+                if (typeof semaine === 'number') {
+                    if (!tasksByWeek.has(semaine)) {
+                        tasksByWeek.set(semaine, []);
+                    }
+                    tasksByWeek.get(semaine)!.push(task);
+                }
+            }
+        });
+
+        // Sort tasks within each week by Poste number
+        tasksByWeek.forEach(weekTasks => {
+            weekTasks.sort((a, b) => (a.poste || 0) - (b.poste || 0));
+        });
+
+        // Sort weeks
+        const sortedWeeks = Array.from(tasksByWeek.keys()).sort((a, b) => a - b);
+        
+        // Build sequential dependencies: each task depends on the previous task
+        // Within a week, tasks are sequential by Poste order
+        // Between weeks, first task of week N depends on last task of week N-1
+        let previousTask: Task | null = null;
+        
+        sortedWeeks.forEach(weekNum => {
+            const weekTasks = tasksByWeek.get(weekNum)!;
+            
+            weekTasks.forEach(task => {
+                if (previousTask) {
+                    task.dependencies = [previousTask.id];
+                } else {
+                    task.dependencies = [];
+                }
+                previousTask = task;
+            });
+        });
+
+        // Set initial positions based on sequential order
+        let currentX = 50;
+        let currentY = 50;
+        const horizontalSpacing = 600;
+        const verticalSpacing = 200;
+        let tasksInRow = 0;
+        const maxTasksPerRow = 5;
+        
+        sortedWeeks.forEach(weekNum => {
+            const weekTasks = tasksByWeek.get(weekNum)!;
+            
+            weekTasks.forEach(task => {
+                task.position = {
+                    x: currentX,
+                    y: currentY
+                };
+                
+                // Move to next position
+                tasksInRow++;
+                if (tasksInRow >= maxTasksPerRow) {
+                    // Move to next row
+                    currentX = 50;
+                    currentY += verticalSpacing;
+                    tasksInRow = 0;
+                } else {
+                    // Move right
+                    currentX += horizontalSpacing;
+                }
+            });
+        });
+
+        return tasks;
+    };
+
     const handleFile = (file: File) => {
         if (!file.name.endsWith('.json')) {
             setError('Le fichier doit être au format JSON');
@@ -50,20 +200,28 @@ const FileUpload: React.FC<FileUploadProps> = ({ onTasksLoaded }) => {
                 const content = e.target?.result as string;
                 const parsed = JSON.parse(content);
 
-                // Accepter soit un array soit un objet avec une propriété tasks/logs
-                let logs: LogEntry[];
+                let tasks: Task[];
 
-                if (Array.isArray(parsed)) {
-                    logs = parsed;
-                } else if (parsed.tasks) {
-                    logs = parsed.tasks;
-                } else if (parsed.logs) {
-                    logs = parsed.logs;
+                // Check if merged_json format (has Poste field)
+                if (Array.isArray(parsed) && parsed.length > 0 && 'Poste' in parsed[0]) {
+                    tasks = parseMergedJsonToTasks(parsed as MergedJsonEntry[]);
                 } else {
-                    throw new Error('Format JSON invalide. Attendu: un array ou {tasks: [...]} ou {logs: [...]}');
+                    // Original format
+                    let logs: LogEntry[];
+
+                    if (Array.isArray(parsed)) {
+                        logs = parsed;
+                    } else if (parsed.tasks) {
+                        logs = parsed.tasks;
+                    } else if (parsed.logs) {
+                        logs = parsed.logs;
+                    } else {
+                        throw new Error('Format JSON invalide. Attendu: un array ou {tasks: [...]} ou {logs: [...]}');
+                    }
+
+                    tasks = parseLogToTasks(logs);
                 }
 
-                const tasks = parseLogToTasks(logs);
                 onTasksLoaded(tasks);
                 setError(null);
 
@@ -145,23 +303,23 @@ const FileUpload: React.FC<FileUploadProps> = ({ onTasksLoaded }) => {
             )}
 
             <div className="upload-example">
-                <h4>Exemple de format JSON :</h4>
-                <pre>{`[
-  {
-    "title": "Recevoir la commande",
-    "description": "Validation de la commande client",
-    "status": "done",
-    "department": "clients",
-    "order": 0
-  },
-  {
-    "title": "Classifier la pièce",
-    "description": "Classification technique",
-    "status": "in-progress",
-    "department": "clients",
-    "order": 1
-  }
-]`}</pre>
+                <h4>Formats JSON acceptés :</h4>
+                <pre>{`Format simple:
+[{
+  "title": "Recevoir la commande",
+  "status": "done",
+  "department": "clients"
+}]
+
+Format merged_json (fabrication):
+[{
+  "Poste": 1,
+  "Nom": "Montage train atterissage",
+  "Nombre pièces": 8,
+  "Temps Prévu": "00:25:00",
+  "Temps Réel": "00:32:45",
+  "Aléas Industriels": "Rupture outillage"
+}]`}</pre>
             </div>
         </div>
     );
