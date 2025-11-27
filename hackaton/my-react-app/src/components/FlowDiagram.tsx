@@ -49,16 +49,14 @@ const FlowDiagram: React.FC<FlowDiagramProps> = ({ tasks, onTasksUpdate }) => {
         tasks.forEach(task => {
             if (task.dependencies && task.dependencies.length > 0) {
                 task.dependencies.forEach(depId => {
-                    const edgeColor = task.status === 'done' ? '#4caf50' :
-                        task.status === 'in-progress' ? '#ff9800' :
-                        task.status === 'review' ? '#ffc107' : '#2196f3';
+                    const edgeColor = '#667eea';
 
                     edges.push({
                         id: `e${depId}-${task.id}`,
                         source: depId,
                         target: task.id,
                         type: 'smoothstep',
-                        animated: task.status === 'in-progress',
+                        animated: false,
                         style: {
                             stroke: edgeColor,
                             strokeWidth: 3,

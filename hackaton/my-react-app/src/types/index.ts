@@ -2,8 +2,6 @@ export interface Task {
     id: string;
     title: string;
     description: string;
-    status: 'todo' | 'in-progress' | 'review' | 'done';
-    department: 'clients' | 'logistics' | 'services';
     createdAt: string;
     order: number;
     // Manufacturing fields from merged_json
@@ -15,6 +13,9 @@ export interface Task {
     causePotentielle?: string;
     heureDebut?: string;
     heureFin?: string;
+    horaireDepart?: string;
+    horaireFin?: string;
+    dateDebut?: number;
     personnes?: any[];
     'pièces'?: any[];
     // Flow diagram fields

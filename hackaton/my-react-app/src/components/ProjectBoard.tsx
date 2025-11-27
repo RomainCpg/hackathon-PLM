@@ -20,8 +20,6 @@ const ProjectBoard: React.FC<ProjectBoardProps> = ({
     const [newTask, setNewTask] = useState({
         title: '',
         description: '',
-        department: 'logistics' as const,
-        status: 'todo' as const,
         order: 0
     });
 
@@ -90,8 +88,6 @@ const ProjectBoard: React.FC<ProjectBoardProps> = ({
         setNewTask({
             title: '',
             description: '',
-            department: 'logistics' as const,
-            status: 'todo',
             order: 0
         });
         setShowAddModal(false);
@@ -175,15 +171,6 @@ const ProjectBoard: React.FC<ProjectBoardProps> = ({
                             value={newTask.description}
                             onChange={e => setNewTask({ ...newTask, description: e.target.value })}
                         />
-                        <select
-                            value={newTask.status}
-                            onChange={e => setNewTask({ ...newTask, status: e.target.value as any })}
-                        >
-                            <option value="todo">À faire</option>
-                            <option value="in-progress">En cours</option>
-                            <option value="review">Révision</option>
-                            <option value="done">Terminé</option>
-                        </select>
                         <div className="modal-actions">
                             <button onClick={() => setShowAddModal(false)}>Annuler</button>
                             <button onClick={handleAddTask} className="primary">Créer</button>

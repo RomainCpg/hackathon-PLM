@@ -59,8 +59,24 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose }) => {
                             <div className="people-grid">
                                 {task.personnes.map((person: any, idx: number) => (
                                     <div key={idx} className="person-item">
-                                        <div className="person-name">{person.Nom || 'N/A'}</div>
-                                        {person.Semaine && <span className="person-badge">Semaine {person.Semaine}</span>}
+                                        <div className="person-name">
+                                            {person.Prénom && person.Nom ? `${person.Prénom} ${person.Nom}` : person.Nom || 'N/A'}
+                                        </div>
+                                        {person.Qualification && (
+                                            <div className="person-info">
+                                                <strong>Qualification:</strong> {person.Qualification}
+                                            </div>
+                                        )}
+                                        {person.Semaine && (
+                                            <div className="person-info">
+                                                <strong>Semaine:</strong> {person.Semaine}
+                                            </div>
+                                        )}
+                                        {person.Matricule && (
+                                            <div className="person-info">
+                                                <strong>Matricule:</strong> {person.Matricule}
+                                            </div>
+                                        )}
                                     </div>
                                 ))}
                             </div>
@@ -131,6 +147,61 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose }) => {
 
 const GanttChart: React.FC<GanttChartProps> = ({ tasks }) => {
     const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+    
+    // Generate color palette
+    const generateColor = (index: number): string => {
+        const colors = [
+            'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)', // Green
+            'linear-gradient(135deg, #2196F3 0%, #1976D2 100%)', // Blue
+            'linear-gradient(135deg, #FF9800 0%, #F57C00 100%)', // Orange
+            'linear-gradient(135deg, #9C27B0 0%, #7B1FA2 100%)', // Purple
+            'linear-gradient(135deg, #F44336 0%, #D32F2F 100%)', // Red
+            'linear-gradient(135deg, #00BCD4 0%, #0097A7 100%)', // Cyan
+            'linear-gradient(135deg, #FFEB3B 0%, #FBC02D 100%)', // Yellow
+            'linear-gradient(135deg, #3F51B5 0%, #303F9F 100%)', // Indigo
+            'linear-gradient(135deg, #607D8B 0%, #455A64 100%)', // Blue Grey
+            'linear-gradient(135deg, #795548 0%, #5D4037 100%)', // Brown
+            'linear-gradient(135deg, #E91E63 0%, #C2185B 100%)', // Pink
+            'linear-gradient(135deg, #009688 0%, #00796B 100%)', // Teal
+            'linear-gradient(135deg, #673AB7 0%, #512DA8 100%)', // Deep Purple
+            'linear-gradient(135deg, #8BC34A 0%, #689F38 100%)', // Light Green
+            'linear-gradient(135deg, #FF5722 0%, #E64A19 100%)', // Deep Orange
+        ];
+        return colors[index % colors.length];
+    };
+    
+    // Extract unique task types from all tasks
+    const getTaskTypes = (): Map<string, string> => {
+        const taskTypeMap = new Map<string, string>();
+        let colorIndex = 0;
+        
+        tasks.forEach(task => {
+            if (task.title) {
+                const parts = task.title.split(':');
+                if (parts.length > 1) {
+                    const firstWord = parts[1].trim().split(' ')[0].toLowerCase();
+                    if (!taskTypeMap.has(firstWord)) {
+                        taskTypeMap.set(firstWord, generateColor(colorIndex++));
+                    }
+                }
+            }
+        });
+        
+        return taskTypeMap;
+    };
+    
+    const taskTypeColorMap = getTaskTypes();
+    
+    // Get color based on first word of task title
+    const getTaskColor = (taskTitle: string): string => {
+        const parts = taskTitle.split(':');
+        if (parts.length > 1) {
+            const firstWord = parts[1].trim().split(' ')[0].toLowerCase();
+            return taskTypeColorMap.get(firstWord) || 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+        }
+        return 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'; // Default purple
+    };
+    
     // Separate linked and unlinked tasks
     const linkedTasks = tasks.filter(task => 
         task.dependencies && task.dependencies.length > 0 ||
@@ -140,15 +211,6 @@ const GanttChart: React.FC<GanttChartProps> = ({ tasks }) => {
     const unlinkedTasks = tasks.filter(task => 
         !task.dependencies?.length && !tasks.some(t => t.dependencies?.includes(task.id))
     );
-
-    // Get week number for a task
-    const getTaskWeek = (task: Task): number | null => {
-        if (task.personnes && task.personnes.length > 0) {
-            const semaine = task.personnes[0].Semaine;
-            if (typeof semaine === 'number') return semaine;
-        }
-        return null;
-    };
 
     // Build task hierarchy for Gantt
     const getTaskLevel = (taskId: string, visited = new Set<string>()): number => {
@@ -164,62 +226,131 @@ const GanttChart: React.FC<GanttChartProps> = ({ tasks }) => {
         return maxParentLevel + 1;
     };
 
-    // Calculate duration from time fields
+    // Parse time string "HH:MM:SS" to minutes
+    const parseTimeToMinutes = (timeStr: string): number => {
+        if (!timeStr) return 0;
+        const parts = timeStr.split(':');
+        const hours = parseInt(parts[0] || '0', 10);
+        const minutes = parseInt(parts[1] || '0', 10);
+        return hours * 60 + minutes;
+    };
+
+    // Calculate duration from time fields (in minutes)
     const getTaskDuration = (task: Task): number => {
+        // Use Horaire fields if available
+        if (task.horaireDepart && task.horaireFin) {
+            const start = parseTimeToMinutes(task.horaireDepart);
+            const end = parseTimeToMinutes(task.horaireFin);
+            return end - start;
+        }
+        // Fallback to temps réel or prévu
         if (task['tempsRéel']) {
-            const [h, m, s] = task['tempsRéel'].split(':').map(Number);
-            return (h || 0) + (m || 0) / 60 + (s || 0) / 3600;
+            const [h, m] = task['tempsRéel'].split(':').map(Number);
+            return (h || 0) * 60 + (m || 0);
         }
         if (task['tempsPrévu']) {
-            const [h, m, s] = task['tempsPrévu'].split(':').map(Number);
-            return (h || 0) + (m || 0) / 60 + (s || 0) / 3600;
+            const [h, m] = task['tempsPrévu'].split(':').map(Number);
+            return (h || 0) * 60 + (m || 0);
         }
-        return 1; // Default 1 hour
+        return 60; // Default 1 hour in minutes
     };
 
-    // Calculate start time based on dependencies
-    const getTaskStartTime = (task: Task, taskStartTimes: Map<string, number>): number => {
-        if (!task.dependencies || task.dependencies.length === 0) return 0;
-        
-        let maxEndTime = 0;
-        task.dependencies.forEach(depId => {
-            const depTask = tasks.find(t => t.id === depId);
-            if (depTask) {
-                const depStart = taskStartTimes.get(depId) || 0;
-                const depDuration = getTaskDuration(depTask);
-                maxEndTime = Math.max(maxEndTime, depStart + depDuration);
-            }
-        });
-        return maxEndTime;
+    // Helper to combine date + time into timestamp
+    const getTaskTimestamp = (task: Task): number => {
+        const dateMs = task.dateDebut || 0;
+        const timeStr = task.horaireDepart || task.heureDebut || '';
+        if (!timeStr) return dateMs;
+        const parts = timeStr.split(':');
+        const hours = parseInt(parts[0] || '0', 10);
+        const minutes = parseInt(parts[1] || '0', 10);
+        return dateMs + (hours * 60 * 60 * 1000) + (minutes * 60 * 1000);
     };
 
-    // Sort linked tasks by level and week
+    // Sort linked tasks by date + time chronologically
     const sortedLinkedTasks = [...linkedTasks].sort((a, b) => {
-        const weekA = getTaskWeek(a) || 0;
-        const weekB = getTaskWeek(b) || 0;
-        if (weekA !== weekB) return weekA - weekB;
+        const timestampA = getTaskTimestamp(a);
+        const timestampB = getTaskTimestamp(b);
+        if (timestampA !== timestampB) return timestampA - timestampB;
         
-        const levelA = getTaskLevel(a.id);
-        const levelB = getTaskLevel(b.id);
-        if (levelA !== levelB) return levelA - levelB;
-        return a.order - b.order;
+        // Secondary sort by Poste number when date/time are equal
+        return (a.poste || 0) - (b.poste || 0);
     });
 
-    // Calculate start times for all tasks
+    // Calculate start times for all tasks (in milliseconds timestamp)
     const taskStartTimes = new Map<string, number>();
+    let minStartTimestamp = Infinity;
+    let maxEndTimestamp = 0;
+    
     sortedLinkedTasks.forEach(task => {
-        const startTime = getTaskStartTime(task, taskStartTimes);
-        taskStartTimes.set(task.id, startTime);
+        const timestamp = getTaskTimestamp(task);
+        taskStartTimes.set(task.id, timestamp);
+        minStartTimestamp = Math.min(minStartTimestamp, timestamp);
+        
+        const duration = getTaskDuration(task);
+        maxEndTimestamp = Math.max(maxEndTimestamp, timestamp + (duration * 60 * 1000));
     });
 
-    // Find total duration
-    const maxEndTime = sortedLinkedTasks.reduce((max, task) => {
-        const start = taskStartTimes.get(task.id) || 0;
-        const duration = getTaskDuration(task);
-        return Math.max(max, start + duration);
-    }, 0);
-
-    const totalHours = Math.ceil(maxEndTime) || 24;
+    // If no tasks, use defaults
+    if (minStartTimestamp === Infinity) minStartTimestamp = Date.now();
+    if (maxEndTimestamp === 0) maxEndTimestamp = minStartTimestamp + (24 * 60 * 60 * 1000);
+    
+    // Calculate working hours range (skip night hours)
+    const minDate = new Date(minStartTimestamp);
+    const maxDate = new Date(maxEndTimestamp);
+    
+    // Adjust to start of working hours (8 AM) on the first day
+    const workDayStart = new Date(minDate);
+    workDayStart.setHours(8, 0, 0, 0);
+    if (minDate < workDayStart) {
+        minStartTimestamp = workDayStart.getTime();
+    }
+    
+    // Adjust to end of working hours (5 PM / 17:00) on the last day
+    const workDayEnd = new Date(maxDate);
+    workDayEnd.setHours(17, 0, 0, 0);
+    if (maxDate > workDayEnd) {
+        maxEndTimestamp = workDayEnd.getTime();
+    }
+    
+    const totalDurationMs = maxEndTimestamp - minStartTimestamp;
+    
+    // Generate timeline markers only for working hours
+    const generateTimelineMarkers = (): { timestamp: number; label: string }[] => {
+        const markers: { timestamp: number; label: string }[] = [];
+        let currentTimestamp = minStartTimestamp;
+        
+        while (currentTimestamp <= maxEndTimestamp) {
+            const date = new Date(currentTimestamp);
+            const hour = date.getHours();
+            
+            // Only include hours between 8 AM and 5 PM (17:00)
+            if (hour >= 8 && hour < 17) {
+                markers.push({
+                    timestamp: currentTimestamp,
+                    label: `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')} ${String(hour).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+                });
+            }
+            
+            currentTimestamp += 60 * 60 * 1000; // Add 1 hour
+            
+            // Skip non-working hours (5 PM to 8 AM)
+            const nextDate = new Date(currentTimestamp);
+            if (nextDate.getHours() >= 17 || nextDate.getHours() < 8) {
+                const skipTo = new Date(nextDate);
+                if (nextDate.getHours() >= 17) {
+                    skipTo.setDate(skipTo.getDate() + 1);
+                    skipTo.setHours(8, 0, 0, 0);
+                } else {
+                    skipTo.setHours(8, 0, 0, 0);
+                }
+                currentTimestamp = skipTo.getTime();
+            }
+        }
+        
+        return markers;
+    };
+    
+    const timelineMarkers = generateTimelineMarkers();
 
     return (
         <div className="gantt-chart">
@@ -227,34 +358,57 @@ const GanttChart: React.FC<GanttChartProps> = ({ tasks }) => {
                 <div className="gantt-section">
                     <h3 className="gantt-title">📊 Diagramme de Gantt - Tâches liées</h3>
                     
+                    {/* Legend */}
+                    <div className="gantt-legend">
+                        <div className="legend-title">Légende des types de tâches :</div>
+                        <div className="legend-items">
+                            {Array.from(taskTypeColorMap.entries()).map(([taskType, color]) => (
+                                <div key={taskType} className="legend-item">
+                                    <div className="legend-color" style={{ background: color }}></div>
+                                    <span>{taskType.charAt(0).toUpperCase() + taskType.slice(1)}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                    
                     <div className="gantt-container">
                         <div className="gantt-header">
                             <div className="gantt-task-labels">Tâche</div>
                             <div className="gantt-timeline">
-                                {Array.from({ length: Math.ceil(totalHours) + 1 }, (_, i) => (
-                                    <div key={i} className="timeline-mark">
-                                        {i}h
-                                    </div>
-                                ))}
+                                {timelineMarkers.map((marker, i) => {
+                                    const date = new Date(marker.timestamp);
+                                    const day = String(date.getDate()).padStart(2, '0');
+                                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                                    const hours = String(date.getHours()).padStart(2, '0');
+                                    const mins = String(date.getMinutes()).padStart(2, '0');
+                                    return (
+                                        <div key={i} className="timeline-mark">
+                                            <div>{day}/{month}</div>
+                                            <div>{hours}:{mins}</div>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
 
                         <div className="gantt-rows">
                             {sortedLinkedTasks.map((task, index) => {
-                                const startTime = taskStartTimes.get(task.id) || 0;
+                                const startTimestamp = taskStartTimes.get(task.id) || minStartTimestamp;
                                 const duration = getTaskDuration(task);
-                                const startPercent = (startTime / totalHours) * 100;
-                                const widthPercent = (duration / totalHours) * 100;
+                                const startPercent = ((startTimestamp - minStartTimestamp) / totalDurationMs) * 100;
+                                const widthPercent = ((duration * 60 * 1000) / totalDurationMs) * 100;
+                                const taskColor = getTaskColor(task.title);
                                 
-                                const currentWeek = getTaskWeek(task);
-                                const previousWeek = index > 0 ? getTaskWeek(sortedLinkedTasks[index - 1]) : null;
-                                const showWeekHeader = currentWeek !== null && currentWeek !== previousWeek;
+                                // Check if we need a date header
+                                const currentDate = new Date(task.dateDebut || 0);
+                                const previousDate = index > 0 ? new Date(sortedLinkedTasks[index - 1].dateDebut || 0) : null;
+                                const showDateHeader = !previousDate || currentDate.toDateString() !== previousDate.toDateString();
 
                                 return (
                                     <React.Fragment key={task.id}>
-                                        {showWeekHeader && (
-                                            <div className="gantt-week-header">
-                                                Semaine {currentWeek}
+                                        {showDateHeader && (
+                                            <div className="gantt-date-header">
+                                                {currentDate.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                                             </div>
                                         )}
                                         <div className="gantt-row">
@@ -266,10 +420,11 @@ const GanttChart: React.FC<GanttChartProps> = ({ tasks }) => {
                                         </div>
                                         <div className="gantt-bar-container">
                                             <div
-                                                className={`gantt-bar status-${task.status}`}
+                                                className="gantt-bar"
                                                 style={{
                                                     left: `${startPercent}%`,
                                                     width: `${widthPercent}%`,
+                                                    background: taskColor,
                                                 }}
                                                 onClick={() => setSelectedTask(task)}
                                                 title={`Cliquez pour voir les détails`}
