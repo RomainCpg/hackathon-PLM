@@ -34,6 +34,8 @@ const RecordForm = ({ record, onSubmit, onClose }: RecordFormProps) => {
       ...prev,
       [name]: name === 'Poste' || name === 'Nombre pièces' || name === 'Date'
         ? Number(value)
+        : name === 'nextId'
+        ? value === '' ? null : Number(value)
         : value,
     }));
   };
@@ -169,6 +171,21 @@ const RecordForm = ({ record, onSubmit, onClose }: RecordFormProps) => {
                 onChange={handleChange}
                 placeholder="ex: 1693785600000"
               />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="nextId">Prochain poste (nextId)</label>
+              <input
+                type="number"
+                id="nextId"
+                name="nextId"
+                value={formData.nextId === null ? '' : formData.nextId || ''}
+                onChange={handleChange}
+                placeholder="Numéro du poste suivant"
+              />
+              <small style={{ color: '#718096', fontSize: '0.85rem' }}>
+                Laissez vide pour marquer comme fin de chaîne
+              </small>
             </div>
 
             <div className="form-group full-width">
