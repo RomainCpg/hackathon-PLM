@@ -5,13 +5,14 @@ import Statistics from './components/Statistics'
 import FlowDiagram from './components/FlowDiagram'
 import GanttChart from './components/GanttChart'
 import FileUpload from './components/FileUpload'
+import RecordManager from './components/RecordManager'
 import './App.css'
 
 function App() {
   const [projects, setProjects] = useState<Project[]>([]);
 
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(projects[0]?.id || null);
-  const [viewMode, setViewMode] = useState<'gantt' | 'statistics' | 'flow'>('gantt');
+  const [viewMode, setViewMode] = useState<'gantt' | 'statistics' | 'flow' | 'records'>('gantt');
   const [showUpload, setShowUpload] = useState(false);
 
   const selectedProject = projects.find(p => p.id === selectedProjectId);
@@ -87,6 +88,12 @@ function App() {
                 🔀 Diagramme Flow
               </button>
               <button
+                className={`view-btn ${viewMode === 'records' ? 'active' : ''}`}
+                onClick={() => setViewMode('records')}
+              >
+                📦 Records
+              </button>
+              <button
                 className="upload-btn"
                 onClick={() => setShowUpload(!showUpload)}
               >
@@ -102,11 +109,13 @@ function App() {
               <GanttChart tasks={selectedProject.tasks} />
             ) : viewMode === 'statistics' ? (
               <Statistics tasks={selectedProject.tasks} />
-            ) : (
+            ) : viewMode === 'flow' ? (
               <FlowDiagram 
                 tasks={selectedProject.tasks} 
                 onTasksUpdate={handleUpdateTasks}
               />
+            ) : (
+              <RecordManager />
             )}
           </>
         ) : (
