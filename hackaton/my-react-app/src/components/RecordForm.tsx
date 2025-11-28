@@ -34,8 +34,8 @@ const RecordForm = ({ record, onSubmit, onClose }: RecordFormProps) => {
       ...prev,
       [name]: name === 'Poste' || name === 'Nombre pièces' || name === 'Date'
         ? Number(value)
-        : name === 'nextId'
-        ? value === '' ? null : Number(value)
+        : name === 'previousIds'
+        ? value === '' ? [] : value.split(',').map(id => Number(id.trim())).filter(id => !isNaN(id))
         : value,
     }));
   };
@@ -174,17 +174,17 @@ const RecordForm = ({ record, onSubmit, onClose }: RecordFormProps) => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="nextId">Prochain poste (nextId)</label>
+              <label htmlFor="previousIds">Postes précédents (previousIds)</label>
               <input
-                type="number"
-                id="nextId"
-                name="nextId"
-                value={formData.nextId === null ? '' : formData.nextId || ''}
+                type="text"
+                id="previousIds"
+                name="previousIds"
+                value={formData.previousIds ? formData.previousIds.join(', ') : ''}
                 onChange={handleChange}
-                placeholder="Numéro du poste suivant"
+                placeholder="ex: 1, 2, 3"
               />
               <small style={{ color: '#718096', fontSize: '0.85rem' }}>
-                Laissez vide pour marquer comme fin de chaîne
+                Numéros des postes précédents, séparés par des virgules. Laissez vide pour un poste de départ.
               </small>
             </div>
 

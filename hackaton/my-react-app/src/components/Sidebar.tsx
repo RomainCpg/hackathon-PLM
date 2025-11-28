@@ -17,6 +17,10 @@ const Sidebar: React.FC<SidebarProps> = ({
 }) => {
     return (
         <div className="sidebar">
+            <div className="sidebar-brand">
+                <img src="/logo.jpeg" alt="PulseTrack" className="brand-logo" />
+                <h1 className="brand-name">PulseTrack</h1>
+            </div>
             <div className="sidebar-header">
                 <h2>📊 Projets</h2>
                 <button onClick={onAddProject} className="add-project-btn">+</button>
