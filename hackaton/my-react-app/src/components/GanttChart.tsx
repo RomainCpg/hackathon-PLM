@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Task } from '../types';
+import { getAllRecords, type Record } from '../services/api';
 import '../styles/GanttChart.css';
 
 interface GanttChartProps {
@@ -10,6 +11,31 @@ interface TaskDetailModalProps {
     task: Task;
     onClose: () => void;
 }
+
+// Convert API Record to Task
+const convertRecordToTask = (record: Record): Task => {
+    return {
+        id: `task-${record.Poste}`,
+        title: `Poste ${record.Poste}: ${record.Nom || 'Sans nom'}`,
+        description: record['Aléas Industriels'] || record['Cause Potentielle'] || '',
+        createdAt: new Date().toISOString(),
+        order: record.Poste,
+        poste: record.Poste,
+        nombrePieces: record['Nombre pièces'],
+        'tempsPrévu': record['Temps Prévu'],
+        'tempsRéel': record['Temps Réel'],
+        'aléasIndustriels': record['Aléas Industriels'],
+        causePotentielle: record['Cause Potentielle'],
+        heureDebut: record['Heure Début'],
+        heureFin: record['Heure Fin'],
+        horaireDepart: record['Heure Début'],
+        horaireFin: record['Heure Fin'],
+        dateDebut: record.Date,
+        personnes: record.Personnes,
+        'pièces': record.Pièces,
+        dependencies: record.previousIds || [],
+    };
+};
 
 const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose }) => {
     return (
@@ -152,19 +178,47 @@ const GanttChart: React.FC<GanttChartProps> = ({ tasks }) => {
     const [isLoadingOptimization, setIsLoadingOptimization] = useState(false);
     const [optimizationError, setOptimizationError] = useState<string | null>(null);
     
+    // State for API data
+    const [apiTasks, setApiTasks] = useState<Task[]>([]);
+    const [isLoadingApi, setIsLoadingApi] = useState(true);
+    const [apiError, setApiError] = useState<string | null>(null);
+
+    // Fetch data from API on component mount
+    useEffect(() => {
+        const fetchRecords = async () => {
+            try {
+                setIsLoadingApi(true);
+                setApiError(null);
+                const records = await getAllRecords();
+                const convertedTasks = records.map(convertRecordToTask);
+                setApiTasks(convertedTasks);
+            } catch (error) {
+                console.error('Error fetching records:', error);
+                setApiError('Erreur lors du chargement des données');
+            } finally {
+                setIsLoadingApi(false);
+            }
+        };
+
+        fetchRecords();
+    }, []);
+
+    // Use API tasks instead of props tasks
+    const allTasks = apiTasks.length > 0 ? apiTasks : tasks;
+    
     // Function to fetch optimized Gantt
     const fetchOptimizedGantt = async () => {
         setIsLoadingOptimization(true);
         setOptimizationError(null);
         
         try {
-            console.log(tasks);
+            console.log(allTasks);
             const response = await fetch('https://process-mining-seven.vercel.app/get_optimal_gantt', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(tasks),
+                body: JSON.stringify(allTasks),
             });
             
             if (!response.ok) {
@@ -183,7 +237,29 @@ const GanttChart: React.FC<GanttChartProps> = ({ tasks }) => {
     };
     
     // Use either optimized or initial tasks based on view mode
-    const displayTasks = viewMode === 'optimized' ? optimizedTasks : tasks;
+    const displayTasks = viewMode === 'optimized' ? optimizedTasks : allTasks;
+    
+    // Show loading state
+    if (isLoadingApi) {
+        return (
+            <div className="gantt-chart">
+                <div className="loading-state">
+                    <p>⏳ Chargement des données...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Show API error if any
+    if (apiError) {
+        return (
+            <div className="gantt-chart">
+                <div className="error-message">
+                    ⚠️ {apiError}
+                </div>
+            </div>
+        );
+    }
     
     // Generate color palette
     const generateColor = (index: number): string => {
@@ -366,6 +442,44 @@ const GanttChart: React.FC<GanttChartProps> = ({ tasks }) => {
         });
     }
 
+    // Calculate total process time
+    const calculateTotalProcessTime = (): number => {
+        if (viewMode === 'optimized' && optimizedTasks.length > 0) {
+            // For optimized view: calculate from earliest start to latest end
+            let minStartMinutes = Infinity;
+            let maxEndMinutes = 0;
+            
+            sortedLinkedTasks.forEach(task => {
+                const startTime = task.heureDebutOptimale;
+                if (startTime) {
+                    const startMinutes = parseTimeToMinutes(startTime);
+                    const duration = getTaskDuration(task);
+                    const endMinutes = startMinutes + duration;
+                    
+                    minStartMinutes = Math.min(minStartMinutes, startMinutes);
+                    maxEndMinutes = Math.max(maxEndMinutes, endMinutes);
+                }
+            });
+            
+            return maxEndMinutes - minStartMinutes;
+        } else {
+            // For initial view: sum of all task durations (sequential)
+            let totalDuration = 0;
+            sortedLinkedTasks.forEach(task => {
+                totalDuration += getTaskDuration(task);
+            });
+            return totalDuration;
+        }
+    };
+
+    const formatTime = (minutes: number): string => {
+        const hours = Math.floor(minutes / 60);
+        const mins = Math.round(minutes % 60);
+        return `${hours}h ${mins}min`;
+    };
+
+    const totalProcessTime = calculateTotalProcessTime();
+
     return (
         <div className="gantt-chart">
             {sortedLinkedTasks.length > 0 && (
@@ -402,7 +516,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ tasks }) => {
                                     onClick={fetchOptimizedGantt}
                                     disabled={isLoadingOptimization}
                                 >
-                                    {isLoadingOptimization ? '⏳ Optimisation en cours...' : '🚀 Calculer l\'optimisation'}
+                                    {isLoadingOptimization ? '⏳ Optimisation en cours...' : '🚀 Calculer le planning optimisé via l\'IA'}
                                 </button>
                             )}
                             
@@ -412,7 +526,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ tasks }) => {
                                     onClick={fetchOptimizedGantt}
                                     disabled={isLoadingOptimization}
                                 >
-                                    {isLoadingOptimization ? '⏳ Optimisation en cours...' : '🚀 Calculer l\'optimisation'}
+                                    {isLoadingOptimization ? '⏳ Optimisation en cours...' : '🚀 Calculer le planning optimisé via l\'IA'}
                                 </button>
                             )}
                         </div>
@@ -499,6 +613,13 @@ const GanttChart: React.FC<GanttChartProps> = ({ tasks }) => {
                             </div>
                         ))}
                     </div>
+                </div>
+            )}
+
+            {sortedLinkedTasks.length > 0 && (
+                <div className="gantt-total-time">
+                    <div className="total-time-label">⏱️ Temps total du processus:</div>
+                    <div className="total-time-value">{formatTime(totalProcessTime)}</div>
                 </div>
             )}
 

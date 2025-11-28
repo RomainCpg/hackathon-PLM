@@ -4,7 +4,6 @@ import Sidebar from './components/Sidebar'
 import Statistics from './components/Statistics'
 import FlowDiagram from './components/FlowDiagram'
 import GanttChart from './components/GanttChart'
-import FileUpload from './components/FileUpload'
 import RecordManager from './components/RecordManager'
 import WorkflowView from './components/WorkflowView'
 import MobileIncidentForm from './components/MobileIncidentForm'
@@ -16,7 +15,6 @@ function App() {
 
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(projects[0]?.id || null);
   const [viewMode, setViewMode] = useState<'gantt' | 'statistics' | 'flow' | 'records' | 'workflow' | 'incidents'>('gantt');
-  const [showUpload, setShowUpload] = useState(false);
 
   const selectedProject = projects.find(p => p.id === selectedProjectId);
 
@@ -45,21 +43,6 @@ function App() {
     };
     setProjects(prev => [...prev, newProject]);
     setSelectedProjectId(newProject.id);
-  };
-
-  const handleTasksLoaded = (tasks: Task[]) => {
-    if (selectedProject) {
-      setProjects(prev => prev.map(project => {
-        if (project.id === selectedProjectId) {
-          return {
-            ...project,
-            tasks: [...project.tasks, ...tasks]
-          };
-        }
-        return project;
-      }));
-      setShowUpload(false);
-    }
   };
 
   // If path is /incident, show the mobile-only incident form (full-screen)
@@ -114,17 +97,7 @@ function App() {
               >
                 🚨 Incidents
               </button>
-              <button
-                className="upload-btn"
-                onClick={() => setShowUpload(!showUpload)}
-              >
-                📁 {showUpload ? 'Fermer' : 'Importer JSON'}
-              </button>
             </div>
-
-            {showUpload && (
-              <FileUpload onTasksLoaded={handleTasksLoaded} />
-            )}
 
             {viewMode === 'gantt' ? (
               <GanttChart tasks={selectedProject.tasks} />

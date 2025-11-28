@@ -1,5 +1,6 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import type { Task } from '../types';
+import { getAllRecords, type Record } from '../services/api';
 import '../styles/Statistics.css';
 
 interface StatisticsProps {
@@ -28,14 +29,67 @@ interface AleasLateness {
   averageLateness: number;
 }
 
+// Convert API Record to Task
+const convertRecordToTask = (record: Record): Task => {
+  return {
+    id: `task-${record.Poste}`,
+    title: `Poste ${record.Poste}: ${record.Nom || 'Sans nom'}`,
+    description: record['Aléas Industriels'] || record['Cause Potentielle'] || '',
+    createdAt: new Date().toISOString(),
+    order: record.Poste,
+    poste: record.Poste,
+    nombrePieces: record['Nombre pièces'],
+    'tempsPrévu': record['Temps Prévu'],
+    'tempsRéel': record['Temps Réel'],
+    'aléasIndustriels': record['Aléas Industriels'],
+    causePotentielle: record['Cause Potentielle'],
+    heureDebut: record['Heure Début'],
+    heureFin: record['Heure Fin'],
+    horaireDepart: record['Heure Début'],
+    horaireFin: record['Heure Fin'],
+    dateDebut: record.Date,
+    personnes: record.Personnes,
+    'pièces': record.Pièces,
+    dependencies: record.previousIds || [],
+  };
+};
+
 function Statistics({ tasks }: StatisticsProps) {
+  // State for API data
+  const [apiTasks, setApiTasks] = useState<Task[]>([]);
+  const [isLoadingApi, setIsLoadingApi] = useState(true);
+  const [apiError, setApiError] = useState<string | null>(null);
+
+  // Fetch data from API on component mount
+  useEffect(() => {
+    const fetchRecords = async () => {
+      try {
+        setIsLoadingApi(true);
+        setApiError(null);
+        const records = await getAllRecords();
+        const convertedTasks = records.map(convertRecordToTask);
+        setApiTasks(convertedTasks);
+      } catch (error) {
+        console.error('Error fetching records:', error);
+        setApiError('Erreur lors du chargement des données');
+      } finally {
+        setIsLoadingApi(false);
+      }
+    };
+
+    fetchRecords();
+  }, []);
+
+  // Use API tasks instead of props tasks
+  const allTasks = apiTasks.length > 0 ? apiTasks : tasks;
+
   const statistics = useMemo(() => {
     let totalLateness = 0;
     const taskLatenessMap = new Map<string, TaskLateness>();
     const causeLatenessMap = new Map<string, { total: number; count: number }>();
     const aleasLatenessMap = new Map<string, { total: number; count: number }>();
 
-    tasks.forEach(task => {
+    allTasks.forEach(task => {
       const tempsPrevuStr = task['tempsPrévu'];
       const tempsReelStr = task['tempsRéel'];
 
@@ -116,15 +170,37 @@ function Statistics({ tasks }: StatisticsProps) {
       causeLateness,
       aleasLateness,
       totalTasksWithLateness: taskLateness.length,
-      totalTasks: tasks.length
+      totalTasks: allTasks.length
     };
-  }, [tasks]);
+  }, [allTasks]);
 
   const formatTime = (minutes: number): string => {
     const hours = Math.floor(minutes / 60);
     const mins = Math.round(minutes % 60);
     return `${hours}h ${mins}min`;
   };
+
+  // Show loading state
+  if (isLoadingApi) {
+    return (
+      <div className="statistics-container">
+        <div className="loading-state">
+          <p>⏳ Chargement des données...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show API error if any
+  if (apiError) {
+    return (
+      <div className="statistics-container">
+        <div className="error-message">
+          ⚠️ {apiError}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="statistics-container">

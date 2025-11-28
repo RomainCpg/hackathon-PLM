@@ -595,3 +595,30 @@
     padding: 2px 6px;
     border-radius: 4px;
 }
+
+/* Total Time Display */
+.gantt-total-time {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    margin-top: 30px;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.total-time-label {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.total-time-value {
+    font-size: 24px;
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 8px 20px;
+    border-radius: 8px;
+}
