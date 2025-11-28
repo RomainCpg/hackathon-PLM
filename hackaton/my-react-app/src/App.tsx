@@ -5,16 +5,21 @@ import Statistics from './components/Statistics'
 import FlowDiagram from './components/FlowDiagram'
 import GanttChart from './components/GanttChart'
 import FileUpload from './components/FileUpload'
+import RecordManager from './components/RecordManager'
+import WorkflowView from './components/WorkflowView'
+import MobileIncidentForm from './components/MobileIncidentForm'
 import './App.css'
 
 function App() {
   const [projects, setProjects] = useState<Project[]>([]);
 
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(projects[0]?.id || null);
-  const [viewMode, setViewMode] = useState<'gantt' | 'statistics' | 'flow'>('gantt');
+  const [viewMode, setViewMode] = useState<'gantt' | 'statistics' | 'flow' | 'records' | 'workflow'>('gantt');
   const [showUpload, setShowUpload] = useState(false);
 
   const selectedProject = projects.find(p => p.id === selectedProjectId);
+
+  const isIncidentPath = typeof window !== 'undefined' && window.location && (window.location.pathname === '/incident' || window.location.pathname === '/incident/');
 
   const handleUpdateTasks = (updatedTasks: Task[]) => {
     setProjects(prev => prev.map(project => {
@@ -56,6 +61,15 @@ function App() {
     }
   };
 
+  // If path is /incident, show the mobile-only incident form (full-screen)
+  if (isIncidentPath) {
+    return (
+      <div style={{height: '100vh'}}>
+        <MobileIncidentForm />
+      </div>
+    )
+  }
+
   return (
     <div className="app-container">
       <Sidebar
@@ -87,6 +101,18 @@ function App() {
                 🔀 Diagramme Flow
               </button>
               <button
+                className={`view-btn ${viewMode === 'workflow' ? 'active' : ''}`}
+                onClick={() => setViewMode('workflow')}
+              >
+                🔗 Workflow
+              </button>
+              <button
+                className={`view-btn ${viewMode === 'records' ? 'active' : ''}`}
+                onClick={() => setViewMode('records')}
+              >
+                📦 Records
+              </button>
+              <button
                 className="upload-btn"
                 onClick={() => setShowUpload(!showUpload)}
               >
@@ -102,11 +128,15 @@ function App() {
               <GanttChart tasks={selectedProject.tasks} />
             ) : viewMode === 'statistics' ? (
               <Statistics tasks={selectedProject.tasks} />
-            ) : (
+            ) : viewMode === 'flow' ? (
               <FlowDiagram 
                 tasks={selectedProject.tasks} 
                 onTasksUpdate={handleUpdateTasks}
               />
+            ) : viewMode === 'workflow' ? (
+              <WorkflowView />
+            ) : (
+              <RecordManager />
             )}
           </>
         ) : (

@@ -3,14 +3,8 @@ import react from '@vitejs/plugin-react'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
-  server: {
-	  host: '0.0.0.0',
-	  port: 5173,
-	  allowedHosts: ['hackathon-plm.rcproject.info']
-	},
-	
   plugins: [
+    react(),
     {
       name: 'custom-log-url',
       configureServer(server) {
@@ -19,5 +13,10 @@ export default defineConfig({
         })
       }
     }
-  ]
+  ],
+  server: {
+    host: '0.0.0.0',
+    port: 5173,
+    allowedHosts: ['hackathon-plm.rcproject.info']
+  }
 })
