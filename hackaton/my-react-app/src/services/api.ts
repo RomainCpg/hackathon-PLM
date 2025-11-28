@@ -17,6 +17,7 @@ export interface Record {
   Pièces?: Piece[];
   previousIds?: number[]; // IDs des postes précédents dans le workflow
   [key: string]: any;
+  'Heure de début optimale'?: string;
 }
 
 export interface Personne {

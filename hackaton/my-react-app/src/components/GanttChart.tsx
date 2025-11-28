@@ -147,6 +147,43 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ task, onClose }) => {
 
 const GanttChart: React.FC<GanttChartProps> = ({ tasks }) => {
     const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+    const [viewMode, setViewMode] = useState<'initial' | 'optimized'>('initial');
+    const [optimizedTasks, setOptimizedTasks] = useState<Task[]>([]);
+    const [isLoadingOptimization, setIsLoadingOptimization] = useState(false);
+    const [optimizationError, setOptimizationError] = useState<string | null>(null);
+    
+    // Function to fetch optimized Gantt
+    const fetchOptimizedGantt = async () => {
+        setIsLoadingOptimization(true);
+        setOptimizationError(null);
+        
+        try {
+            console.log(tasks);
+            const response = await fetch('https://process-mining-seven.vercel.app/get_optimal_gantt', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(tasks),
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const optimizedData = await response.json();
+            setOptimizedTasks(optimizedData);
+            setViewMode('optimized');
+        } catch (error) {
+            console.error('Error fetching optimized Gantt:', error);
+            setOptimizationError('Erreur lors de l\'optimisation. Veuillez réessayer.');
+        } finally {
+            setIsLoadingOptimization(false);
+        }
+    };
+    
+    // Use either optimized or initial tasks based on view mode
+    const displayTasks = viewMode === 'optimized' ? optimizedTasks : tasks;
     
     // Generate color palette
     const generateColor = (index: number): string => {
@@ -175,7 +212,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ tasks }) => {
         const taskTypeMap = new Map<string, string>();
         let colorIndex = 0;
         
-        tasks.forEach(task => {
+        displayTasks.forEach(task => {
             if (task.title) {
                 const parts = task.title.split(':');
                 if (parts.length > 1) {
@@ -203,21 +240,22 @@ const GanttChart: React.FC<GanttChartProps> = ({ tasks }) => {
     };
     
     // Separate linked and unlinked tasks
-    const linkedTasks = tasks.filter(task => 
+    // Since dependencies now contain poste numbers, we need to check accordingly
+    const linkedTasks = displayTasks.filter(task => 
         task.dependencies && task.dependencies.length > 0 ||
-        tasks.some(t => t.dependencies?.includes(task.id))
+        displayTasks.some(t => t.dependencies?.includes(task.poste || 0))
     );
     
-    const unlinkedTasks = tasks.filter(task => 
-        !task.dependencies?.length && !tasks.some(t => t.dependencies?.includes(task.id))
+    const unlinkedTasks = displayTasks.filter(task => 
+        !task.dependencies?.length && !displayTasks.some(t => t.dependencies?.includes(task.poste || 0))
     );
 
     // Build task hierarchy for Gantt
-    const getTaskLevel = (taskId: string, visited = new Set<string>()): number => {
-        if (visited.has(taskId)) return 0;
-        visited.add(taskId);
+    const getTaskLevel = (posteId: number, visited = new Set<number>()): number => {
+        if (visited.has(posteId)) return 0;
+        visited.add(posteId);
         
-        const task = tasks.find(t => t.id === taskId);
+        const task = displayTasks.find(t => t.poste === posteId);
         if (!task?.dependencies || task.dependencies.length === 0) return 0;
         
         const maxParentLevel = Math.max(
@@ -255,37 +293,136 @@ const GanttChart: React.FC<GanttChartProps> = ({ tasks }) => {
         return 60; // Default 1 hour in minutes
     };
 
-    // Sort linked tasks by Poste order only
+    // Sort linked tasks based on view mode
     const sortedLinkedTasks = [...linkedTasks].sort((a, b) => {
+        if (viewMode === 'optimized' && a.heureDebutOptimale && b.heureDebutOptimale) {
+            // Sort chronologically by optimal start time
+            const timeA = parseTimeToMinutes(a.heureDebutOptimale);
+            const timeB = parseTimeToMinutes(b.heureDebutOptimale);
+            return timeA - timeB;
+        }
+        // Default: sort by Poste order
         return (a.poste || 0) - (b.poste || 0);
     });
 
-    // Calculate positions based on sequential poste order and tempsRéel
+    // Calculate positions based on view mode
     const taskPositions = new Map<string, { startPercent: number; widthPercent: number }>();
-    let totalDuration = 0;
     
-    // First pass: calculate total duration
-    sortedLinkedTasks.forEach(task => {
-        const duration = getTaskDuration(task);
-        totalDuration += duration;
-    });
-
-    // Second pass: calculate positions
-    let accumulatedDuration = 0;
-    sortedLinkedTasks.forEach(task => {
-        const duration = getTaskDuration(task);
-        const startPercent = totalDuration > 0 ? (accumulatedDuration / totalDuration) * 100 : 0;
-        const widthPercent = totalDuration > 0 ? (duration / totalDuration) * 100 : 100;
+    if (viewMode === 'optimized' && optimizedTasks.length > 0) {
+        // For optimized view: use "heureDebutOptimale" and "tempsRéel"
+        // First, find the earliest start time and latest end time
+        let minStartMinutes = Infinity;
+        let maxEndMinutes = 0;
         
-        taskPositions.set(task.id, { startPercent, widthPercent });
-        accumulatedDuration += duration;
-    });
+        sortedLinkedTasks.forEach(task => {
+            const startTime = task.heureDebutOptimale;
+            if (startTime) {
+                const startMinutes = parseTimeToMinutes(startTime);
+                const duration = getTaskDuration(task);
+                const endMinutes = startMinutes + duration;
+                
+                minStartMinutes = Math.min(minStartMinutes, startMinutes);
+                maxEndMinutes = Math.max(maxEndMinutes, endMinutes);
+            }
+        });
+        
+        const totalDurationMinutes = maxEndMinutes - minStartMinutes;
+        
+        // Calculate positions for each task
+        sortedLinkedTasks.forEach(task => {
+            const startTime = task.heureDebutOptimale;
+            if (startTime && totalDurationMinutes > 0) {
+                const startMinutes = parseTimeToMinutes(startTime);
+                const duration = getTaskDuration(task);
+                
+                const startPercent = ((startMinutes - minStartMinutes) / totalDurationMinutes) * 100;
+                const widthPercent = (duration / totalDurationMinutes) * 100;
+                
+                taskPositions.set(task.id, { startPercent, widthPercent });
+            } else {
+                // Fallback if no optimal start time
+                taskPositions.set(task.id, { startPercent: 0, widthPercent: 100 });
+            }
+        });
+    } else {
+        // For initial view: sequential positioning based on Poste order
+        let totalDuration = 0;
+        
+        // First pass: calculate total duration
+        sortedLinkedTasks.forEach(task => {
+            const duration = getTaskDuration(task);
+            totalDuration += duration;
+        });
+
+        // Second pass: calculate positions
+        let accumulatedDuration = 0;
+        sortedLinkedTasks.forEach(task => {
+            const duration = getTaskDuration(task);
+            const startPercent = totalDuration > 0 ? (accumulatedDuration / totalDuration) * 100 : 0;
+            const widthPercent = totalDuration > 0 ? (duration / totalDuration) * 100 : 100;
+            
+            taskPositions.set(task.id, { startPercent, widthPercent });
+            accumulatedDuration += duration;
+        });
+    }
 
     return (
         <div className="gantt-chart">
             {sortedLinkedTasks.length > 0 && (
                 <div className="gantt-section">
-                    <h3 className="gantt-title">📊 Diagramme de Gantt - Tâches liées</h3>
+                    <div className="gantt-header-section">
+                        <h3 className="gantt-title">📊 Diagramme de Gantt - Tâches liées</h3>
+                        
+                        <div className="view-mode-controls">
+                            <div className="toggle-switch">
+                                <button
+                                    className={`toggle-button ${viewMode === 'initial' ? 'active' : ''}`}
+                                    onClick={() => setViewMode('initial')}
+                                >
+                                    Initial
+                                </button>
+                                <button
+                                    className={`toggle-button ${viewMode === 'optimized' ? 'active' : ''}`}
+                                    onClick={() => {
+                                        if (optimizedTasks.length === 0) {
+                                            // Don't switch if no optimized data yet
+                                            return;
+                                        }
+                                        setViewMode('optimized');
+                                    }}
+                                    disabled={optimizedTasks.length === 0}
+                                >
+                                    Optimisé
+                                </button>
+                            </div>
+                            
+                            {viewMode === 'optimized' && optimizedTasks.length === 0 && (
+                                <button 
+                                    className="optimize-button"
+                                    onClick={fetchOptimizedGantt}
+                                    disabled={isLoadingOptimization}
+                                >
+                                    {isLoadingOptimization ? '⏳ Optimisation en cours...' : '🚀 Calculer l\'optimisation'}
+                                </button>
+                            )}
+                            
+                            {viewMode === 'initial' && optimizedTasks.length === 0 && (
+                                <button 
+                                    className="optimize-button"
+                                    onClick={fetchOptimizedGantt}
+                                    disabled={isLoadingOptimization}
+                                >
+                                    {isLoadingOptimization ? '⏳ Optimisation en cours...' : '🚀 Calculer l\'optimisation'}
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                    
+                    {optimizationError && (
+                        <div className="error-message">
+                            ⚠️ {optimizationError}
+                        </div>
+                    )}
                     
                     {/* Legend */}
                     <div className="gantt-legend">
