@@ -15,7 +15,7 @@ export interface Record {
   'Cause Potentielle'?: string;
   Personnes?: Personne[];
   Pièces?: Piece[];
-  previousIds?: number[];
+  previousIds?: number[]; // IDs des postes précédents dans le workflow
   [key: string]: any;
   'Heure de début optimale'?: string;
 }
@@ -51,6 +51,37 @@ export interface Piece {
   'Coût achat pièce (€)'?: number;
   'Temps CAO (h)'?: number;
   [key: string]: any;
+}
+
+// ==================== INCIDENTS ROUTES ====================
+
+export interface Incident {
+  id: number;
+  Poste: number;
+  timestamp: number;
+  severity: string;
+  [key: string]: any;
+}
+
+/**
+ * Get all incidents
+ */
+export async function getIncidents(): Promise<Incident[]> {
+  const response = await fetch(`${API_BASE_URL}/incidents`);
+  return handleResponse<Incident[]>(response);
+}
+
+/**
+ * Delete an incident by id
+ */
+export async function deleteIncident(id: number): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/incidents/${id}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`API Error: ${response.status} - ${error}`);
+  }
 }
 
 // Helper function to handle API responses

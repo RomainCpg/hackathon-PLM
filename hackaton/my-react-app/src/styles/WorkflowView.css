@@ -69,6 +69,52 @@
   margin: 0.25rem 0;
 }
 
+.workflow-legend {
+  background: linear-gradient(135deg, #f7fafc 0%, #e2e8f0 100%);
+  border: 2px solid #cbd5e0;
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+}
+
+.workflow-legend p {
+  margin: 0 0 0.75rem 0;
+  color: #2d3748;
+}
+
+.legend-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #4a5568;
+}
+
+.legend-line {
+  width: 40px;
+  height: 3px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.legend-line.blue {
+  background-color: #4299e1;
+}
+
+.legend-line.orange {
+  background-color: #f59e0b;
+}
+
+.legend-line.red {
+  background-color: #ef4444;
+}
+
 .workflow-content {
   display: flex;
   gap: 0;
@@ -141,12 +187,39 @@
   transform: translateY(-2px);
 }
 
+.workflow-node-custom.multiple-deps {
+  border-color: #f59e0b;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+}
+
+.workflow-node-custom.multiple-deps:hover {
+  border-color: #f59e0b;
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+}
+
 .node-header-custom {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 0.75rem 1rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.workflow-node-custom.multiple-deps .node-header-custom {
+  background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);
+}
+
+.deps-badge {
+  background-color: rgba(255, 255, 255, 0.25);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  backdrop-filter: blur(4px);
 }
 
 .node-id-custom {
