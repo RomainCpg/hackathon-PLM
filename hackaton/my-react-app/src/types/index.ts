@@ -18,6 +18,7 @@ export interface Task {
     dateDebut?: number;
     personnes?: any[];
     'pièces'?: any[];
+    nextId?: number | null; // ID du prochain poste dans le workflow
     // Flow diagram fields
     dependencies?: string[]; // IDs of tasks that must complete before this one
     position?: { x: number; y: number }; // Position in flow diagram

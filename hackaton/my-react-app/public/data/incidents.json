@@ -1,0 +1,14 @@
+[
+  {
+    "id": 1,
+    "Poste": 1,
+    "timestamp": 1693528200000,
+    "severity": "high"
+  },
+  {
+    "id": 2,
+    "Poste": 4,
+    "timestamp": 1764318426588,
+    "severity": "high"
+  }
+]
