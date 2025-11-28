@@ -27,3 +27,12 @@ Endpoints (base `http://localhost:3000`):
 - `DELETE /records/:poste/pieces/:ref` — delete pièce
 
 The server stores data in `data/data.json`.
+
+Incidents storage
+- `GET /incidents` — list all incidents
+- `GET /incidents/:id` — get one incident
+- `POST /incidents` — create incident (body must include `Poste` linking to an existing record)
+- `PUT /incidents/:id` — update incident
+- `DELETE /incidents/:id` — delete incident
+
+Incidents are stored in `data/incidents.json` and each incident must reference a valid `Poste` value from the main `data/data.json` file.
