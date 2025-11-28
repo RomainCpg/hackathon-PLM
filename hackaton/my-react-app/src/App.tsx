@@ -8,13 +8,14 @@ import FileUpload from './components/FileUpload'
 import RecordManager from './components/RecordManager'
 import WorkflowView from './components/WorkflowView'
 import MobileIncidentForm from './components/MobileIncidentForm'
+import IncidentsManager from './components/IncidentsManager'
 import './App.css'
 
 function App() {
   const [projects, setProjects] = useState<Project[]>([]);
 
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(projects[0]?.id || null);
-  const [viewMode, setViewMode] = useState<'gantt' | 'statistics' | 'flow' | 'records' | 'workflow'>('gantt');
+  const [viewMode, setViewMode] = useState<'gantt' | 'statistics' | 'flow' | 'records' | 'workflow' | 'incidents'>('gantt');
   const [showUpload, setShowUpload] = useState(false);
 
   const selectedProject = projects.find(p => p.id === selectedProjectId);
@@ -113,6 +114,12 @@ function App() {
                 📦 Records
               </button>
               <button
+                className={`view-btn ${viewMode === 'incidents' ? 'active' : ''}`}
+                onClick={() => setViewMode('incidents')}
+              >
+                🚨 Incidents
+              </button>
+              <button
                 className="upload-btn"
                 onClick={() => setShowUpload(!showUpload)}
               >
@@ -135,6 +142,10 @@ function App() {
               />
             ) : viewMode === 'workflow' ? (
               <WorkflowView />
+            ) : viewMode === 'records' ? (
+              <RecordManager />
+            ) : viewMode === 'incidents' ? (
+              <IncidentsManager />
             ) : (
               <RecordManager />
             )}
