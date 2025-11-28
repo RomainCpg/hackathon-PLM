@@ -99,12 +99,7 @@ function App() {
                 className={`view-btn ${viewMode === 'flow' ? 'active' : ''}`}
                 onClick={() => setViewMode('flow')}
               >
-                🔀 Diagramme Flow
-              </button>
-              <button
-                className={`view-btn ${viewMode === 'workflow' ? 'active' : ''}`}
-                onClick={() => setViewMode('workflow')}
-              >
+              
                 🔗 Workflow
               </button>
               <button
