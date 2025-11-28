@@ -1,4 +1,4 @@
-const API_BASE_URL = 'https://hackathon-plm-backend.rcproject.info';
+export const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000';
 
 // Types for API requests/responses matching your JSON structure
 export interface Record {

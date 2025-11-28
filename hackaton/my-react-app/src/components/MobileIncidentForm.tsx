@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import '../styles/MobileIncidentForm.css'
+import { API_BASE_URL } from '../services/api'
 
 type PosteRecord = {
   id: number
@@ -50,7 +51,7 @@ const MobileIncidentForm: React.FC = () => {
 
     setLoading(true)
     try {
-      const res = await fetch('/incidents', {
+      const res = await fetch(`${API_BASE_URL}/incidents`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newIncident)
