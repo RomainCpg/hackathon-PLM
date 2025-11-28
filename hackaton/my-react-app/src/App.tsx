@@ -95,11 +95,11 @@ function App() {
               >
                 📈 Statistiques
               </button>
-              <button
-                className={`view-btn ${viewMode === 'flow' ? 'active' : ''}`}
-                onClick={() => setViewMode('flow')}
-              >
               
+              <button
+                className={`view-btn ${viewMode === 'workflow' ? 'active' : ''}`}
+                onClick={() => setViewMode('workflow')}
+              >
                 🔗 Workflow
               </button>
               <button
