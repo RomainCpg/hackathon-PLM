@@ -15,8 +15,9 @@ export interface Record {
   'Cause Potentielle'?: string;
   Personnes?: Personne[];
   Pièces?: Piece[];
-  nextId?: number | null; // ID du prochain poste dans le workflow
+  previousIds?: number[];
   [key: string]: any;
+  'Heure de début optimale'?: string;
 }
 
 export interface Personne {

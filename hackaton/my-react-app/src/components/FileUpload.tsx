@@ -32,6 +32,7 @@ interface MergedJsonEntry {
     'Cause Potentielle': string;
     Personnes: any[];
     Pièces: any[];
+    previousIds?: number[]; // Optional array of previous poste IDs
 }
 
 const FileUpload: React.FC<FileUploadProps> = ({ onTasksLoaded }) => {
@@ -103,7 +104,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onTasksLoaded }) => {
                 personnes: entry["Personnes"],
                 'pièces': entry["Pièces"],
                 // Initialize dependencies and position - will be set in second pass
-                dependencies: [] as string[],
+                dependencies: [] as number[],
                 position: { x: 0, y: 0 },
             };
         });
@@ -117,11 +118,16 @@ const FileUpload: React.FC<FileUploadProps> = ({ onTasksLoaded }) => {
             return (a.poste || 0) - (b.poste || 0);
         });
         
-        // Build sequential dependencies: each task depends on the previous task
-        sortedTasks.forEach((task, index) => {
-            if (index > 0) {
-                task.dependencies = [sortedTasks[index - 1].id];
+        // Build dependencies from previousIds or default to sequential
+        sortedTasks.forEach((task, _) => {
+            // Find the original entry to get previousIds
+            const originalEntry = entries.find(e => e.Poste === task.poste);
+            
+            if (originalEntry?.previousIds && originalEntry.previousIds.length > 0) {
+                // Use previousIds from JSON as dependencies
+                task.dependencies = originalEntry.previousIds;
             } else {
+                // Empty previousIds means no dependencies
                 task.dependencies = [];
             }
         });
