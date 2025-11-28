@@ -7,6 +7,7 @@ import GanttChart from './components/GanttChart'
 import FileUpload from './components/FileUpload'
 import RecordManager from './components/RecordManager'
 import WorkflowView from './components/WorkflowView'
+import MobileIncidentForm from './components/MobileIncidentForm'
 import './App.css'
 
 function App() {
@@ -17,6 +18,8 @@ function App() {
   const [showUpload, setShowUpload] = useState(false);
 
   const selectedProject = projects.find(p => p.id === selectedProjectId);
+
+  const isIncidentPath = typeof window !== 'undefined' && window.location && (window.location.pathname === '/incident' || window.location.pathname === '/incident/');
 
   const handleUpdateTasks = (updatedTasks: Task[]) => {
     setProjects(prev => prev.map(project => {
@@ -57,6 +60,15 @@ function App() {
       setShowUpload(false);
     }
   };
+
+  // If path is /incident, show the mobile-only incident form (full-screen)
+  if (isIncidentPath) {
+    return (
+      <div style={{height: '100vh'}}>
+        <MobileIncidentForm />
+      </div>
+    )
+  }
 
   return (
     <div className="app-container">
