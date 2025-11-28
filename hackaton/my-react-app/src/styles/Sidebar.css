@@ -11,19 +11,25 @@
 .sidebar-brand {
     padding: 20px;
     display: flex;
-    align-items: center;
-    gap: 15px;
+    flex-direction: column; /* Le logo au-dessus du texte */
+    justify-content: center; /* Centre vertical */
+    align-items: center; /* Centre horizontal */
+    text-align: center;
+    gap: 10px;
     border-bottom: 2px solid rgba(255, 255, 255, 0.15);
     background: rgba(0, 0, 0, 0.15);
 }
 
+
 .brand-logo {
-    width: 48px;
-    height: 48px;
-    border-radius: 10px;
-    object-fit: cover;
+    width: 500px;             /* plus petit qu'avant */
+    height: 60px;
+    max-width: 50%;
+    max-height: 100%;
+    border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
+
 
 .brand-name {
     margin: 0;
