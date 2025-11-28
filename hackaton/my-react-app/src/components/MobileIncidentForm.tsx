@@ -76,7 +76,7 @@ const MobileIncidentForm: React.FC = () => {
     <div className="mobile-incident-root">
       <header className="mobile-incident-header">
         <h1>Créer un Incident</h1>
-        <p className="hint">Mobile only — utilisez `/incident` sur smartphone</p>
+        <p className="hint">Déclarer un incident</p>
       </header>
 
       <form className="mobile-incident-form" onSubmit={handleSubmit}>
