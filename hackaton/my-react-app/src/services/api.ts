@@ -1,4 +1,5 @@
-export const API_BASE_URL = 'https://hackathon-plm-backend.rcproject.info';
+export const API_BASE_URL = 'http://localhost:3000'; // 'https://hackathon-plm-backend.rcproject.info'
+export const OPTIMIZATION_API_URL = 'http://localhost:5000'; // 'https://process-mining-seven.vercel.app'
 
 // Types for API requests/responses matching your JSON structure
 export interface Record {
@@ -266,4 +267,26 @@ export async function checkBackendHealth(): Promise<boolean> {
   } catch (error) {
     return false;
   }
+}
+
+// ==================== OPTIMIZATION API (Python Backend) ====================
+
+/**
+ * Get optimized Gantt chart schedule from Python backend
+ */
+export async function getOptimalGantt(tasks: any[]): Promise<any[]> {
+  const response = await fetch(`${OPTIMIZATION_API_URL}/get_optimal_gantt`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(tasks),
+  });
+  
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Optimization API Error: ${response.status} - ${error}`);
+  }
+  
+  return response.json();
 }

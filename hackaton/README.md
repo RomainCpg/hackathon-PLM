@@ -23,17 +23,30 @@ hackaton/
 │   │   ├── hooks/         # Custom hooks
 │   │   ├── styles/        # Fichiers CSS
 │   │   ├── types/         # Types TypeScript
+│   │   ├── services/      # Services API
 │   │   ├── App.tsx        # Composant principal
 │   │   └── main.tsx       # Point d'entrée
 │   └── package.json
 │
-└── backend/               # Backend Node.js + Express
-    ├── server.js          # Serveur API
-    ├── package.json
-    └── README.md
+├── backend/               # Backend Node.js + Express
+│   ├── index.js           # Serveur API principal
+│   ├── storage.js         # Gestion des données
+│   ├── package.json
+│   └── README.md
+│
+└── optimization-backend/  # Backend Python pour optimisation
+    ├── app.py             # API Flask pour l'optimisation
+    ├── rl_model.py        # Modèle d'optimisation
+    ├── requirements.txt   # Dépendances Python
+    └── .gitignore
 ```
 
 ## 🛠️ Installation
+
+### Prérequis
+- **Node.js** (v16+)
+- **Python** (v3.8+)
+- **npm** ou **yarn**
 
 ### Frontend
 
@@ -45,21 +58,32 @@ npm run dev
 
 Le frontend sera accessible sur `http://localhost:5173`
 
-### Backend
+### Backend Node.js (API principale)
 
 ```bash
 cd backend
 npm install
-npm run dev
+npm start
 ```
 
-Le backend sera accessible sur `http://localhost:3001`
+Le backend sera accessible sur `http://localhost:3000`
+
+### Backend Python (Optimisation Gantt)
+
+```bash
+cd optimization-backend
+pip install -r requirements.txt
+python app.py
+```
+
+Le backend d'optimisation sera accessible sur `http://localhost:5000`
 
 ## 🎯 Utilisation
 
-1. Démarrer le backend en premier
-2. Démarrer le frontend
-3. Ouvrir `http://localhost:5173` dans votre navigateur
+1. **Démarrer le backend Node.js** (API principale)
+2. **Démarrer le backend Python** (API d'optimisation) - optionnel, uniquement pour l'optimisation du Gantt
+3. **Démarrer le frontend**
+4. Ouvrir `http://localhost:5173` dans votre navigateur
 
 ### Fonctionnalités disponibles :
 
@@ -68,8 +92,9 @@ Le backend sera accessible sur `http://localhost:3001`
 - **Modifier une tâche** : Cliquez sur l'icône crayon sur une carte de tâche
 - **Supprimer une tâche** : Cliquez sur l'icône poubelle
 - **Changer de projet** : Cliquez sur un projet dans la sidebar
-- **📊 Vue Grille / 🔀 Vue Diagramme** : Basculez entre les deux vues
+- **📊 Vue Grille / 🔀 Vue Diagramme / 📈 Vue Gantt** : Basculez entre les vues
 - **📁 Importer JSON** : Uploadez des logs au format JSON pour créer des tâches automatiquement
+- **🚀 Optimisation Gantt** : Dans la vue Gantt, utilisez le toggle "Initial/Optimisé" pour calculer un planning optimal
 
 ## 🎨 Architecture
 
@@ -77,12 +102,20 @@ Le backend sera accessible sur `http://localhost:3001`
 - **React 19** avec hooks
 - **TypeScript** pour le typage
 - **Vite** pour le bundling
+- **React Flow** pour les diagrammes interactifs
 - **CSS modules** pour les styles
 
-### Backend (Node.js + Express)
+### Backend Node.js (Express)
 - **Express** pour l'API REST
 - **CORS** pour la communication frontend-backend
-- Base de données en mémoire (à migrer vers MongoDB/PostgreSQL)
+- Gestion des données (records, incidents, personnes, pièces)
+- Stockage en fichiers JSON
+
+### Backend Python (Flask)
+- **Flask** pour l'API d'optimisation
+- **OR-Tools** pour l'optimisation de planification
+- Calcul du planning optimal du diagramme de Gantt
+- CORS activé pour communication avec le frontend
 
 ## � Nouveauté: Diagramme Flow
 
@@ -127,19 +160,39 @@ Voir `example-logs.json` et `FLOW_DIAGRAM.md` pour plus de détails.
 
 ## 📝 API Endpoints
 
-### Projets
+### Backend Node.js (port 3000)
+
+#### Projets
 - `GET /api/projects` - Liste des projets
 - `POST /api/projects` - Créer un projet
 - `PUT /api/projects/:id` - Modifier un projet
 - `DELETE /api/projects/:id` - Supprimer un projet
 
-### Tâches
+#### Tâches
 - `POST /api/projects/:id/tasks` - Ajouter une tâche
 - `PUT /api/projects/:projectId/tasks/:taskId` - Modifier une tâche
 - `DELETE /api/projects/:projectId/tasks/:taskId` - Supprimer une tâche
 
-### Stats
+#### Records (données de production)
+- `GET /records` - Liste des enregistrements
+- `POST /records` - Créer un enregistrement
+- `PUT /records/:poste` - Modifier un enregistrement
+- `DELETE /records/:poste` - Supprimer un enregistrement
+
+#### Incidents
+- `GET /incidents` - Liste des incidents
+- `POST /incidents` - Créer un incident
+- `DELETE /incidents/:id` - Supprimer un incident
+
+#### Stats
 - `GET /api/stats` - Statistiques globales
+
+### Backend Python (port 5000)
+
+#### Optimisation
+- `POST /get_optimal_gantt` - Calculer le planning optimal
+  - Envoie un tableau de tâches au format JSON
+  - Retourne les tâches avec le champ `"Heure de début optimale"` ajouté
 
 ## 🤝 Contribution
 

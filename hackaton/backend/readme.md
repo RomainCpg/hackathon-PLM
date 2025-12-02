@@ -5,7 +5,7 @@ Simple file-based Express backend to store the JSON structure used in the hackat
 Quick start (PowerShell on Windows):
 
 ```powershell
-cd c:\Users\romai\Documents\ESILV\hackathonPLM\appli\hackathon-PLM\hackaton\backend
+cd .\hackaton\backend
 npm install
 npm start
 ```

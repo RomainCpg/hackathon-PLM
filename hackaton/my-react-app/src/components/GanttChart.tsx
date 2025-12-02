@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { Task } from '../types';
-import { getAllRecords, type Record } from '../services/api';
+import { getAllRecords, getOptimalGantt, type Record } from '../services/api';
 import '../styles/GanttChart.css';
 
 interface GanttChartProps {
@@ -212,20 +212,7 @@ const GanttChart: React.FC<GanttChartProps> = ({ tasks }) => {
         setOptimizationError(null);
         
         try {
-            console.log(allTasks);
-            const response = await fetch('https://process-mining-seven.vercel.app/get_optimal_gantt', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(allTasks),
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            const optimizedData = await response.json();
+            const optimizedData = await getOptimalGantt(allTasks);
             setOptimizedTasks(optimizedData);
             setViewMode('optimized');
         } catch (error) {
@@ -358,12 +345,12 @@ const GanttChart: React.FC<GanttChartProps> = ({ tasks }) => {
             return end - start;
         }
         // Fallback to temps réel or prévu
-        if (task['tempsRéel']) {
-            const [h, m] = task['tempsRéel'].split(':').map(Number);
-            return (h || 0) * 60 + (m || 0);
-        }
         if (task['tempsPrévu']) {
             const [h, m] = task['tempsPrévu'].split(':').map(Number);
+            return (h || 0) * 60 + (m || 0);
+        }
+        if (task['tempsRéel']) {
+            const [h, m] = task['tempsRéel'].split(':').map(Number);
             return (h || 0) * 60 + (m || 0);
         }
         return 60; // Default 1 hour in minutes
